@@ -72,7 +72,7 @@ cd apps/web && npm install && cd ../..
 
 ## 当前状态
 
-✅ **可用 MVP** — CLI、本地 API、网页界面与单元测试已就绪；支持 CUPS Raw 与 USB 串口两种连接方式。商品库默认使用 `data/stores/example_store.json` 示例数据，真实业务 JSON 请在本机 `data/stores/` 下自行添加（不入库）。
+✅ **可用 MVP** — CLI、本地 API、网页界面与单元测试已就绪；支持 CUPS Raw 与 USB 串口两种连接方式。商品库默认使用 `BT_store`（本机需有 `data/stores/BT_store.json`），示例库见 `example_store.json`（已入库）。
 
 ## 商品库
 

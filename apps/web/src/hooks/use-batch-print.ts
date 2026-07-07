@@ -17,13 +17,19 @@ export function useBatchPrint() {
     error: null,
   });
 
-  const print = async (templateId: string, storeId: string, queue: QueueEntry[]) => {
+  const print = async (
+    templateId: string,
+    storeId: string,
+    printer: string,
+    queue: QueueEntry[]
+  ) => {
     if (queue.length === 0) return;
     setState({ loading: true, result: null, error: null });
     try {
       const result = await apiClient.batchPrint({
         template: templateId,
         store: storeId,
+        printer,
         items: queue.map((e) => ({ product_id: e.product.id, copies: e.copies })),
       });
       setState({ loading: false, result, error: null });

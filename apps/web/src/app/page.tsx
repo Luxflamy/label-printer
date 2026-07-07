@@ -1,165 +1,209 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { LabelPreview } from "@/components/label-preview";
+import { PdfDropZone } from "@/components/pdf-drop-zone";
+import { PrinterPicker } from "@/components/printer-picker";
 import { PrintButton } from "@/components/print-button";
-import { PrinterStatus } from "@/components/printer-status";
 import { StatusBanner } from "@/components/status-banner";
-import { TemplatePicker } from "@/components/template-picker";
-import { VariableForm } from "@/components/variable-form";
-import { usePrintActions } from "@/hooks/use-print-actions";
-import { useTemplateDetail } from "@/hooks/use-template-detail";
-import { useTemplates } from "@/hooks/use-templates";
+import { usePdfShipping } from "@/hooks/use-pdf-shipping";
+import { usePrinters } from "@/hooks/use-printers";
+import type { FitMode } from "@/types/api";
 
-export default function Home() {
-  const { templates, loading: templatesLoading, error: templatesError } = useTemplates();
-  const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null);
-  const { detail, loading: detailLoading } = useTemplateDetail(selectedTemplate);
-  const [variables, setVariables] = useState<Record<string, string>>({});
+export default function ShippingLabelPage() {
+  const {
+    printers,
+    selectedQueue,
+    loading: printersLoading,
+    selecting: printerSelecting,
+    error: printersError,
+    lastUpdated,
+    selectPrinter,
+    refresh: refreshPrinters,
+  } = usePrinters();
 
   const {
-    imagePreview,
-    tsplPreview,
-    printState,
-    previewImage,
-    previewTspl,
-    printLabel,
-    resetPrintState,
-  } = usePrintActions();
+    file,
+    preview,
+    page,
+    copies,
+    rotation,
+    fitMode,
+    scale,
+    printAllPages,
+    previewing,
+    printing,
+    error,
+    printSuccess,
+    setFile,
+    clearFile,
+    setPage,
+    setCopies,
+    setRotation,
+    setFitMode,
+    setScale,
+    setPrintAllPages,
+    print,
+  } = usePdfShipping(selectedQueue);
 
-  // 模板加载完成后默认选中「小标签」或标记 default 的模板
-  useEffect(() => {
-    if (!selectedTemplate && templates.length > 0) {
-      const preferred =
-        templates.find((t) => t.default) ??
-        templates.find((t) => t.id === "xiaobiaoqian") ??
-        templates.find((t) => t.variables.length > 0);
-      setSelectedTemplate((preferred ?? templates[0]).id);
-    }
-  }, [templates, selectedTemplate]);
-
-  // 切换模板时，按新模板的变量列表重置表单
-  useEffect(() => {
-    if (detail) {
-      const next: Record<string, string> = {};
-      for (const name of detail.variables) next[name] = "";
-      setVariables(next);
-    }
-  }, [detail]);
-
-  const handleSelectTemplate = (name: string) => {
-    setSelectedTemplate(name);
-    resetPrintState();
-  };
-
-  const handleVariableChange = (name: string, value: string) => {
-    setVariables((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const buildPayload = () => ({
-    template: selectedTemplate ?? "",
-    variables,
-  });
-
-  /** 点击预览：同时触发图片和 TSPL 两种预览。 */
-  const handlePreview = () => {
-    if (!selectedTemplate) return;
-    const payload = buildPayload();
-    previewImage(payload);
-    previewTspl(payload);
-  };
-
-  const handlePrint = () => {
-    if (!selectedTemplate) return;
-    printLabel(buildPayload());
-  };
-
-  const canSubmit =
-    !!selectedTemplate &&
-    !!detail &&
-    detail.variables.every((name) => (variables[name] ?? "").trim() !== "");
+  const busy = previewing || printing;
 
   return (
-    <div className="mx-auto flex w-full max-w-3xl flex-col gap-6 px-6 py-10">
-      <header className="flex flex-col gap-1">
-        <h1 className="text-2xl font-semibold">标签打印</h1>
-        <p className="text-sm text-zinc-500">选择模板，填写内容，一键打印到 TSC 标签机</p>
+    <main className="mx-auto flex max-w-4xl flex-col gap-5 px-6 py-8">
+      <header>
+        <h1 className="text-2xl font-semibold text-zinc-900 dark:text-zinc-100">运货标签</h1>
+        <p className="mt-1 text-sm text-zinc-500">
+          拖入 PDF 箱标，自动适配 100×150mm（250P）并打印到 TSC 标签机
+        </p>
       </header>
 
-      <PrinterStatus />
+      {error && <StatusBanner kind="error" message={error} />}
+      {printSuccess && <StatusBanner kind="success" message={printSuccess} />}
 
-      {/* 步骤 1：选模板 */}
-      <section className="flex flex-col gap-3">
-        <h2 className="text-sm font-medium text-zinc-500">1. 选择模板</h2>
-        {templatesError ? (
-          <StatusBanner kind="error" message={templatesError} />
-        ) : (
-          <TemplatePicker
-            templates={templates}
-            selected={selectedTemplate}
-            onSelect={handleSelectTemplate}
-            loading={templatesLoading}
-          />
-        )}
+      <section className="rounded-lg border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
+        <PrinterPicker
+          printers={printers}
+          selectedQueue={selectedQueue}
+          loading={printersLoading}
+          selecting={printerSelecting}
+          error={printersError}
+          lastUpdated={lastUpdated}
+          onSelect={selectPrinter}
+          onRefresh={refreshPrinters}
+        />
       </section>
 
-      {/* 步骤 2：填写变量 */}
-      {selectedTemplate && (
-        <section className="flex flex-col gap-3">
-          <h2 className="text-sm font-medium text-zinc-500">2. 填写内容</h2>
-          {detailLoading && <p className="text-sm text-zinc-500">加载模板详情…</p>}
-          {detail && (
-            <VariableForm
-              variables={detail.variables}
-              values={variables}
-              onChange={handleVariableChange}
-            />
-          )}
-        </section>
-      )}
+      <section className="relative flex flex-col gap-3">
+        <PdfDropZone file={file} disabled={busy} onFile={setFile} onClear={clearFile} />
+      </section>
 
-      {/* 步骤 3：预览与打印 */}
-      {selectedTemplate && (
-        <section className="flex flex-col gap-3">
-          <div className="flex items-center justify-between">
-            <h2 className="text-sm font-medium text-zinc-500">3. 预览与打印</h2>
-            <button
-              type="button"
-              onClick={handlePreview}
-              disabled={!canSubmit || imagePreview.loading || tsplPreview.loading}
-              className="rounded-md bg-zinc-100 px-3 py-1 text-sm font-medium text-zinc-700 hover:bg-zinc-200 disabled:cursor-not-allowed disabled:opacity-40 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700"
-            >
-              {imagePreview.loading ? "生成中…" : "预览标签"}
-            </button>
-          </div>
+      {preview && (
+        <section className="grid gap-4 md:grid-cols-[280px_1fr]">
+          <div className="flex flex-col gap-3 text-sm">
+            <div className="rounded-lg border border-zinc-200 p-3 dark:border-zinc-700">
+              <p className="text-xs text-zinc-500">PDF 尺寸</p>
+              <p className="font-medium">
+                {preview.pdf_width_mm} × {preview.pdf_height_mm} mm
+              </p>
+              <p className="mt-2 text-xs text-zinc-500">目标纸张</p>
+              <p className="font-medium">
+                {preview.target_width_mm}×{preview.target_height_mm} mm ({preview.target_stock})
+              </p>
+            </div>
 
-          <LabelPreview
-            imageResult={imagePreview.result}
-            imageLoading={imagePreview.loading}
-            imageError={imagePreview.error}
-            tspl={tsplPreview.result?.tspl ?? null}
-            tsplLoading={tsplPreview.loading}
-            tsplError={tsplPreview.error}
-          />
-
-          <div className="flex items-center gap-4">
-            <PrintButton loading={printState.loading} disabled={!canSubmit} onClick={handlePrint} />
-            {!canSubmit && (
-              <span className="text-sm text-zinc-400">请先填写完所有字段</span>
+            {preview.page_count > 1 && (
+              <label className="flex flex-col gap-1 text-xs">
+                <span className="text-zinc-500">页码</span>
+                <select
+                  value={page}
+                  disabled={busy || printAllPages}
+                  onChange={(e) => setPage(Number(e.target.value))}
+                  className="rounded border border-zinc-300 bg-white px-2 py-1 dark:border-zinc-600 dark:bg-zinc-900"
+                >
+                  {Array.from({ length: preview.page_count }, (_, i) => (
+                    <option key={i} value={i}>
+                      第 {i + 1} 页 / {preview.page_count}
+                    </option>
+                  ))}
+                </select>
+                <label className="mt-1 flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={printAllPages}
+                    disabled={busy}
+                    onChange={(e) => setPrintAllPages(e.target.checked)}
+                  />
+                  打印全部页
+                </label>
+              </label>
             )}
+
+            <label className="flex flex-col gap-1 text-xs">
+              <span className="text-zinc-500">适应方式</span>
+              <select
+                value={fitMode}
+                disabled={busy}
+                onChange={(e) => setFitMode(e.target.value as FitMode)}
+                className="rounded border border-zinc-300 bg-white px-2 py-1 dark:border-zinc-600 dark:bg-zinc-900"
+              >
+                <option value="contain">等比完整（推荐）</option>
+                <option value="cover">铺满裁切</option>
+                <option value="fill">拉伸填满</option>
+              </select>
+            </label>
+
+            <label className="flex flex-col gap-1 text-xs">
+              <span className="text-zinc-500">打印放大</span>
+              <div className="flex items-center gap-2">
+                <input
+                  type="range"
+                  min={50}
+                  max={150}
+                  step={1}
+                  value={Math.round(scale * 100)}
+                  disabled={busy}
+                  onChange={(e) => setScale(Number(e.target.value) / 100)}
+                  className="flex-1"
+                />
+                <span className="w-10 text-right font-medium tabular-nums">
+                  {Math.round(scale * 100)}%
+                </span>
+              </div>
+            </label>
+
+            <label className="flex flex-col gap-1 text-xs">
+              <span className="text-zinc-500">旋转</span>
+              <select
+                value={rotation}
+                disabled={busy}
+                onChange={(e) => setRotation(Number(e.target.value))}
+                className="rounded border border-zinc-300 bg-white px-2 py-1 dark:border-zinc-600 dark:bg-zinc-900"
+              >
+                <option value={0}>0°</option>
+                <option value={90}>90°</option>
+                <option value={180}>180°</option>
+                <option value={270}>270°</option>
+              </select>
+            </label>
+
+            <label className="flex flex-col gap-1 text-xs">
+              <span className="text-zinc-500">份数</span>
+              <input
+                type="number"
+                min={1}
+                max={99}
+                value={copies}
+                disabled={busy || printAllPages}
+                onChange={(e) => setCopies(Number(e.target.value))}
+                className="rounded border border-zinc-300 bg-white px-2 py-1 dark:border-zinc-600 dark:bg-zinc-900"
+              />
+            </label>
+
+            {preview.warnings.map((w) => (
+              <p key={w} className="text-xs text-amber-600 dark:text-amber-400">
+                {w}
+              </p>
+            ))}
           </div>
 
-          {printState.result && (
-            <StatusBanner
-              kind="success"
-              message={`打印成功：模板 ${printState.result.template} · 打印机 ${
-                printState.result.queue ?? "未知"
-              }`}
+          <div className="flex flex-col gap-2">
+            <p className="text-xs text-zinc-400">预览（固定框内缩放）</p>
+            <div className="flex h-[420px] w-[280px] items-center justify-center overflow-hidden rounded-lg border border-zinc-200 bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-950">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={`data:image/png;base64,${preview.image_b64}`}
+                alt="PDF 标签预览"
+                className="max-h-full max-w-full object-contain"
+              />
+            </div>
+            <PrintButton
+              loading={printing}
+              disabled={!file || !selectedQueue || previewing}
+              onClick={print}
             />
-          )}
-          {printState.error && <StatusBanner kind="error" message={printState.error} />}
+          </div>
         </section>
       )}
-    </div>
+
+      {previewing && <p className="text-sm text-zinc-400">正在解析 PDF…</p>}
+    </main>
   );
 }

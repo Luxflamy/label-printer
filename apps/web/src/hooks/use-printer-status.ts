@@ -8,6 +8,7 @@ interface PrinterStatusState {
   online: boolean;
   loading: boolean;
   printers: PrinterInfo[];
+  selectedQueue: string | null;
   error: string | null;
 }
 
@@ -17,6 +18,7 @@ export function usePrinterStatus() {
     online: false,
     loading: true,
     printers: [],
+    selectedQueue: null,
     error: null,
   });
 
@@ -24,13 +26,20 @@ export function usePrinterStatus() {
     setState((prev) => ({ ...prev, loading: true }));
     try {
       await apiClient.health();
-      const printers = await apiClient.listPrinters();
-      setState({ online: true, loading: false, printers, error: null });
+      const data = await apiClient.listPrinters();
+      setState({
+        online: true,
+        loading: false,
+        printers: data.printers,
+        selectedQueue: data.selected_queue,
+        error: null,
+      });
     } catch (err) {
       setState({
         online: false,
         loading: false,
         printers: [],
+        selectedQueue: null,
         error: err instanceof Error ? err.message : "无法连接后端服务",
       });
     }

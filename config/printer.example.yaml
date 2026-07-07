@@ -19,8 +19,9 @@ connection:
 
 printer:
   model: TE344
-  dpi: 203
-  dots_per_mm: 8
+  # TE344 / TL340 为 300dpi；TL240 / TE244 等为 203dpi
+  dpi: 300
+  dots_per_mm: 12
 
 logging:
   level: INFO

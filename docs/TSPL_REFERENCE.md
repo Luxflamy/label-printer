@@ -2,6 +2,17 @@
 
 > 完整手册见 TSC 官方 TSPL/TSPL2 Programming Manual
 
+## 走纸/传感器校准
+
+| 命令 | 示例 | 说明 |
+|------|------|------|
+| SET GAP AUTO | `SET GAP AUTO` | 自动调节间隙传感器灵敏度 |
+| GAPDETECT | `GAPDETECT 240,16` | 间隙纸：学习标签长+间隙（dots） |
+| AUTODETECT | `AUTODETECT 240,16` | 自动判断介质（固件 V6.86+，不设 GAP） |
+| BLINEDETECT | `BLINEDETECT 1200,16` | 黑标纸：学习标签长+黑标 |
+| HOME | `HOME` | 走纸到标签起始位置 |
+| FORMFEED | `FORMFEED` | 走到下一张标签起始（需先 SIZE） |
+
 ## 标签设置
 
 | 命令 | 示例 | 说明 |

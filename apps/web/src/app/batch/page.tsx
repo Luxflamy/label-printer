@@ -1,12 +1,14 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { PrinterPicker } from "@/components/printer-picker";
 import { PrintQueue } from "@/components/print-queue";
 import { ProductLibrary } from "@/components/product-library";
 import { StatusBanner } from "@/components/status-banner";
 import { StorePicker } from "@/components/store-picker";
 import { TemplatePicker } from "@/components/template-picker";
 import { useBatchPrint } from "@/hooks/use-batch-print";
+import { usePrinters } from "@/hooks/use-printers";
 import { usePrintQueue } from "@/hooks/use-print-queue";
 import { useProductStores } from "@/hooks/use-product-stores";
 import { useProducts } from "@/hooks/use-products";
@@ -14,7 +16,7 @@ import { useTemplates } from "@/hooks/use-templates";
 
 export default function BatchPage() {
   /* ---- 模板 ---- */
-  const { templates, loading: tplLoading } = useTemplates();
+  const { templates, loading: tplLoading, error: templatesError } = useTemplates();
   const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null);
 
   useEffect(() => {
@@ -41,6 +43,18 @@ export default function BatchPage() {
   /* ---- 打印队列 ---- */
   const { queue, addToQueue, setCopies, removeFromQueue, clearQueue, reorderQueue } = usePrintQueue();
 
+  /* ---- 打印机 ---- */
+  const {
+    printers,
+    selectedQueue,
+    loading: printersLoading,
+    selecting: printerSelecting,
+    error: printersError,
+    lastUpdated,
+    selectPrinter,
+    refresh: refreshPrinters,
+  } = usePrinters();
+
   /* ---- 批量打印 ---- */
   const { loading: printing, result: printResult, error: printError, print, reset } = useBatchPrint();
 
@@ -57,15 +71,22 @@ export default function BatchPage() {
   }, []);
 
   const handlePrint = () => {
-    if (!selectedTemplate || !selectedStore) return;
+    if (!selectedTemplate || !selectedStore || !selectedQueue) return;
     reset();
-    print(selectedTemplate, selectedStore, queue);
+    print(selectedTemplate, selectedStore, selectedQueue, queue);
   };
 
   const totalSheets = queue.reduce((s, e) => s + e.copies, 0);
 
+  const backendError = templatesError || storesError || printersError;
+
   return (
     <div className="flex h-[calc(100vh-49px)] flex-col gap-0 overflow-hidden">
+      {backendError && (
+        <div className="shrink-0 border-b border-red-200 bg-red-50 px-4 py-2 dark:border-red-900 dark:bg-red-950/40">
+          <StatusBanner kind="error" message={backendError} />
+        </div>
+      )}
       {/* 上方：模板 + 商品库选择 */}
       <div className="shrink-0 border-b border-zinc-200 bg-white dark:border-zinc-800 dark:bg-black">
         <div className="mx-auto flex max-w-7xl flex-col gap-1.5 px-4 py-2">
@@ -115,14 +136,28 @@ export default function BatchPage() {
             <h2 className="text-sm font-medium text-zinc-600 dark:text-zinc-400">打印队列</h2>
           </div>
           <div className="min-h-0 flex-1 overflow-hidden px-5 py-4">
-            <PrintQueue
-              queue={queue}
-              onAdd={addToQueue}
-              onCopiesChange={setCopies}
-              onRemove={removeFromQueue}
-              onReorder={reorderQueue}
-              onClear={clearQueue}
-            />
+            <div className="flex h-full flex-col gap-3">
+              <PrinterPicker
+                printers={printers}
+                selectedQueue={selectedQueue}
+                loading={printersLoading}
+                selecting={printerSelecting}
+                error={printersError}
+                lastUpdated={lastUpdated}
+                onSelect={selectPrinter}
+                onRefresh={refreshPrinters}
+              />
+              <div className="min-h-0 flex-1">
+                <PrintQueue
+                  queue={queue}
+                  onAdd={addToQueue}
+                  onCopiesChange={setCopies}
+                  onRemove={removeFromQueue}
+                  onReorder={reorderQueue}
+                  onClear={clearQueue}
+                />
+              </div>
+            </div>
           </div>
           {/* 底部操作栏 */}
           <div className="shrink-0 border-t border-zinc-200 bg-white px-5 py-3 dark:border-zinc-800 dark:bg-black">
@@ -165,7 +200,14 @@ export default function BatchPage() {
             <button
               type="button"
               onClick={handlePrint}
-              disabled={queue.length === 0 || !selectedTemplate || !selectedStore || printing}
+              disabled={
+                queue.length === 0 ||
+                !selectedTemplate ||
+                !selectedStore ||
+                !selectedQueue ||
+                printing ||
+                printerSelecting
+              }
               className="w-full rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-40"
             >
               {printing

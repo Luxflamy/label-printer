@@ -14,6 +14,7 @@ from typing import Any
 
 from PIL import Image, ImageDraw, ImageFont
 
+from label_printer.calibration import CalibrationProfile
 from label_printer.templates.renderer import build_label_job, validate_variables
 from label_printer.tspl.constants import DOTS_PER_MM
 from label_printer.tspl.layout import (
@@ -178,6 +179,7 @@ def _align_x_px(align: str, container_w: int, item_w: int, fallback_x: int = 0) 
 def draw_label_png(
     template: dict[str, Any],
     variables: dict[str, Any],
+    calibration: CalibrationProfile | None = None,
 ) -> bytes:
     """主入口：模板 + 变量 → PNG bytes（内存，不写文件）。"""
     validate_variables(template, variables)
@@ -187,6 +189,12 @@ def draw_label_png(
     height_mm = float(label["height_mm"])
     width_px = _px(width_mm)
     height_px = _px(height_mm)
+
+    ref_x_mm = 0.0
+    ref_y_mm = 0.0
+    if calibration is not None:
+        ref_x_mm = calibration.reference_x_dots / DOTS_PER_MM
+        ref_y_mm = calibration.reference_y_dots / DOTS_PER_MM
 
     img = Image.new("RGB", (width_px, height_px), BG_COLOR)
     draw = ImageDraw.Draw(img)
@@ -205,8 +213,8 @@ def draw_label_png(
         raw_content = element.get("content", "")
         content = _substitute(raw_content, variables) if raw_content else raw_content
 
-        x_mm = resolve_x_mm(element, content, width_mm)
-        y_mm = float(element.get("y_mm", 0))
+        x_mm = resolve_x_mm(element, content, width_mm) + ref_x_mm
+        y_mm = float(element.get("y_mm", 0)) + ref_y_mm
         x_px = _px(x_mm)
         y_px = _px(y_mm)
 
@@ -257,6 +265,55 @@ def draw_label_png(
                 side = estimate_qrcode_width_dots(content, cell_width) * SCALE // DOTS_PER_MM
                 draw.rectangle([x_px, y_px, x_px + side, y_px + side],
                                 outline=BARCODE_COLOR, width=2)
+
+    buf = io.BytesIO()
+    img.save(buf, format="PNG", optimize=True)
+    return buf.getvalue()
+
+
+def draw_calibration_png(
+    label: dict[str, Any],
+    profile: CalibrationProfile,
+) -> bytes:
+    """校准测试页预览 — 与 build_calibration_job 布局一致。"""
+    width_mm = float(label["width_mm"])
+    height_mm = float(label["height_mm"])
+    width_px = _px(width_mm)
+    height_px = _px(height_mm)
+
+    ref_x_mm = profile.reference_x_dots / DOTS_PER_MM
+    ref_y_mm = profile.reference_y_dots / DOTS_PER_MM
+
+    img = Image.new("RGB", (width_px, height_px), BG_COLOR)
+    draw = ImageDraw.Draw(img)
+
+    draw.rectangle(
+        [BORDER_PX, BORDER_PX, width_px - BORDER_PX - 1, height_px - BORDER_PX - 1],
+        outline=BORDER_COLOR,
+        width=BORDER_PX,
+    )
+
+    inset = 1.0
+    ix1, iy1 = _px(inset + ref_x_mm), _px(inset + ref_y_mm)
+    ix2, iy2 = _px(width_mm - inset + ref_x_mm), _px(height_mm - inset + ref_y_mm)
+    draw.rectangle([ix1, iy1, ix2, iy2], outline=BARCODE_COLOR, width=2)
+
+    cx = width_mm / 2 + ref_x_mm
+    cy = height_mm / 2 + ref_y_mm
+    draw.line([_px(cx - 5), _px(cy), _px(cx + 5), _px(cy)], fill=BARCODE_COLOR, width=2)
+    draw.line([_px(cx), _px(cy - 5), _px(cx), _px(cy + 5)], fill=BARCODE_COLOR, width=2)
+
+    font = _get_pil_font(_font_size_px("1"))
+    for text, x_mm, y_mm in (
+        ("TL", 2, 2),
+        ("TR", width_mm - 8, 2),
+        ("BL", 2, height_mm - 4),
+        ("BR", width_mm - 8, height_mm - 4),
+        (f"{width_mm:g}x{height_mm:g}mm", width_mm / 2 - 6, height_mm / 2 + 3),
+        (f"REF {profile.reference_x_dots},{profile.reference_y_dots}", 2, height_mm / 2 - 2),
+        (f"GAP+{profile.gap_offset_mm:g}mm", 2, height_mm / 2 + 1),
+    ):
+        draw.text((_px(x_mm + ref_x_mm), _px(y_mm + ref_y_mm)), text, fill=TEXT_COLOR, font=font)
 
     buf = io.BytesIO()
     img.save(buf, format="PNG", optimize=True)

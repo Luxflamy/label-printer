@@ -6,7 +6,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Generic, TypeVar
+from typing import Any, Generic, Literal, TypeVar
 
 from pydantic import BaseModel, ConfigDict
 
@@ -34,6 +34,16 @@ class HealthData(BaseModel):
 class PrinterInfo(BaseModel):
     name: str
     status: str
+    selected: bool = False
+
+
+class PrinterListData(BaseModel):
+    printers: list[PrinterInfo]
+    selected_queue: str | None = None
+
+
+class SelectPrinterRequest(BaseModel):
+    queue: str
 
 
 class PrinterConfigData(BaseModel):
@@ -68,6 +78,7 @@ class RenderRequest(BaseModel):
     template: str
     variables: dict[str, str] = {}
     copies: int = 1
+    printer: str | None = None
 
 
 class RenderData(BaseModel):
@@ -82,11 +93,13 @@ class PrintRequest(BaseModel):
     template: str
     variables: dict[str, str] = {}
     copies: int = 1
+    printer: str | None = None
 
 
 class PreviewRequest(BaseModel):
     template: str
     variables: dict[str, str] = {}
+    printer: str | None = None
 
 
 class PreviewData(BaseModel):
@@ -140,6 +153,7 @@ class BatchItem(BaseModel):
 class BatchPrintRequest(BaseModel):
     template: str
     store: str | None = None
+    printer: str | None = None
     items: list[BatchItem]
 
 
@@ -156,3 +170,108 @@ class BatchPrintData(BaseModel):
     succeeded: int
     failed: int
     results: list[BatchItemResult]
+
+
+# ---- 校准 --------------------------------------------------------------
+
+class CalibrationProfileSchema(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    reference_x_dots: int = 0
+    reference_y_dots: int = 0
+    gap_offset_mm: float = 0.0
+
+
+class StockSpecSchema(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    stock_code: str
+    name: str
+    width_mm: float
+    height_mm: float
+    gap_mm: float
+    direction: int
+
+
+class CalibrationData(BaseModel):
+    printer: str
+    stock_code: str
+    profile: CalibrationProfileSchema
+
+
+class CalibrationStocksData(BaseModel):
+    stocks: list[StockSpecSchema]
+
+
+class CalibrationPreviewRequest(BaseModel):
+    printer: str
+    stock_code: str
+    profile: CalibrationProfileSchema
+
+
+class CalibrationPreviewData(BaseModel):
+    printer: str
+    stock_code: str
+    profile: CalibrationProfileSchema
+    image_b64: str
+    tspl: str
+    width_mm: float
+    height_mm: float
+
+
+class CalibrationSaveRequest(BaseModel):
+    printer: str
+    stock_code: str
+    profile: CalibrationProfileSchema
+
+
+class CalibrationPrintRequest(BaseModel):
+    printer: str
+    stock_code: str
+    profile: CalibrationProfileSchema
+
+
+class AutoFeedRequest(BaseModel):
+    printer: str
+    stock_code: str
+    media_type: Literal["gap", "blackmark"] = "gap"
+    strategy: Literal["gapdetect", "autodetect"] = "gapdetect"
+    print_test_after: bool = False
+
+
+class AutoFeedData(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    printer: str
+    stock_code: str
+    media_type: str
+    strategy: str
+    tspl: str
+    message: str
+    test_printed: bool = False
+
+
+class ShippingLabelPreviewData(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    page_count: int
+    page: int
+    pdf_width_mm: float
+    pdf_height_mm: float
+    target_stock: str
+    target_width_mm: float
+    target_height_mm: float
+    fit_mode: str
+    rotation: int
+    scale: float
+    image_b64: str
+    warnings: list[str] = []
+
+
+class ShippingLabelPrintData(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    pages_printed: int
+    copies: int
+    queue: str | None = None
+    stock_code: str

@@ -117,7 +117,9 @@ def list_templates(labels_dir: Path | None = None) -> list[str]:
 
     templates_dir = base / "templates"
     if templates_dir.is_dir():
-        names.update(p.stem for p in templates_dir.glob("*.yaml"))
+        names.update(
+            p.stem for p in templates_dir.glob("*.yaml") if not p.name.startswith("_")
+        )
 
     for p in base.glob("*.yaml"):
         if not p.name.startswith("_"):

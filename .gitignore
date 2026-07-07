@@ -11,8 +11,9 @@ build/
 data/stores/*.json
 !data/stores/example_store.json
 
-# 本机配置（含 USB 端口路径）
+# 本机配置（含 USB 端口路径、校准偏移）
 config/printer.yaml
+config/calibration.yaml
 
 # 日志与临时输出
 data/logs/

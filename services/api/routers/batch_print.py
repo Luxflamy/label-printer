@@ -67,7 +67,7 @@ def batch_print(
             )
 
     # 合并渲染 + 一次发送
-    batch = service.print_batch(req.template, items)
+    batch = service.print_batch(req.template, items, printer=req.printer)
 
     all_results = pre_results + [
         BatchItemResult(

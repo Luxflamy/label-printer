@@ -35,6 +35,19 @@ def test_label_job_escapes_quotes() -> None:
     assert "say 'hi'" in job.build_text()
 
 
+def test_label_job_gap_offset() -> None:
+    job = LabelJob(width_mm=40, height_mm=30, gap_mm=2, gap_offset_mm=0.5, reference=(4, -2))
+    data = job.build_text()
+    assert "GAP 2 mm,0.5 mm" in data
+    assert "REFERENCE 4,-2" in data
+
+
+def test_label_job_box() -> None:
+    job = LabelJob(width_mm=40, height_mm=30)
+    job.box(1, 1, 39, 29, thickness=2)
+    assert "BOX 8,8,312,232,2" in job.build_text()
+
+
 def test_label_job_multiple_copies() -> None:
     job = LabelJob(width_mm=40, height_mm=30)
     assert b"PRINT 5" in job.build(copies=5)

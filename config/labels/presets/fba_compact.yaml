@@ -9,11 +9,11 @@ elements:
   - id: sku
     type: text
     align: center
-    x_mm: 1
+    x_mm: 6
     y_mm: 5
-    font: "2"
-    x_mul: 1.5
-    y_mul: 1.5
+    font: "1"
+    x_mul: 2
+    y_mul: 2
     content: "{{ sku }}"
 
   - id: fnsku_barcode

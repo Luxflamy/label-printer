@@ -3,7 +3,7 @@
 import { usePrinterStatus } from "@/hooks/use-printer-status";
 
 export function PrinterStatus() {
-  const { online, loading, printers, error, refresh } = usePrinterStatus();
+  const { online, loading, printers, selectedQueue, error, refresh } = usePrinterStatus();
 
   return (
     <div className="flex items-center justify-between rounded-lg border border-zinc-200 bg-white px-4 py-3 text-sm dark:border-zinc-800 dark:bg-zinc-900">
@@ -23,7 +23,10 @@ export function PrinterStatus() {
         {online && printers.length > 0 && (
           <span className="text-zinc-500">
             · 打印机：
-            {printers.map((p) => `${p.name}（${p.status}）`).join("、")}
+            {printers.map((p) => {
+              const selected = p.name === selectedQueue ? "✓ " : "";
+              return `${selected}${p.name}（${p.status}）`;
+            }).join("、")}
           </span>
         )}
         {online && printers.length === 0 && (

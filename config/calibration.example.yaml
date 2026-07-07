@@ -1,0 +1,6 @@
+default:
+  reference_x_dots: 0
+  reference_y_dots: 0
+  gap_offset_mm: 0.0
+
+profiles: {}

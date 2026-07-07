@@ -1,7 +1,9 @@
 # 商品库清单 — 在 data/stores/ 下放置 <id>.json 即可新增库
 # 真实业务数据（如 BT_store.json）不入库，请在本机自行添加
-default: example_store
+default: BT_store
 
 stores:
+  BT_store:
+    name: BT_store
   example_store:
     name: example_store

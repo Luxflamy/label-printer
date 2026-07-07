@@ -25,7 +25,7 @@ router = APIRouter(tags=["print"])
 def render(
     req: RenderRequest, service: LabelPrinterService = Depends(get_service)
 ) -> Envelope[RenderData]:
-    result = service.render(req.template, req.variables, copies=req.copies)
+    result = service.render(req.template, req.variables, copies=req.copies, printer=req.printer)
     return Envelope(ok=True, data=RenderData.model_validate(result))
 
 
@@ -34,7 +34,7 @@ def render_preview(
     req: PreviewRequest, service: LabelPrinterService = Depends(get_service)
 ) -> Envelope[PreviewData]:
     """返回 base64 编码的 PNG 预览图，前端直接用 <img src="data:image/png;base64,..."> 展示。"""
-    result = service.render_preview_image(req.template, req.variables)
+    result = service.render_preview_image(req.template, req.variables, printer=req.printer)
     b64 = base64.b64encode(result.png_bytes).decode("ascii")
     data = PreviewData(
         template=result.template,
@@ -49,5 +49,7 @@ def render_preview(
 def print_label(
     req: PrintRequest, service: LabelPrinterService = Depends(get_service)
 ) -> Envelope[PrintData]:
-    result = service.print_one(req.template, req.variables, copies=req.copies)
+    result = service.print_one(
+        req.template, req.variables, copies=req.copies, printer=req.printer
+    )
     return Envelope(ok=True, data=PrintData.model_validate(result))

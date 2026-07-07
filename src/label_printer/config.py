@@ -22,3 +22,29 @@ def load_printer_config(path: Path | None = None) -> dict[str, Any]:
         )
     with config_path.open(encoding="utf-8") as f:
         return yaml.safe_load(f)
+
+
+def resolve_dots_per_mm(config: dict[str, Any]) -> int:
+    """从 printer.yaml 解析每毫米点数（优先 dots_per_mm，否则由 dpi 推算）。"""
+    printer = config.get("printer") or {}
+    if printer.get("dots_per_mm") is not None:
+        return int(printer["dots_per_mm"])
+    dpi = int(printer.get("dpi", 203))
+    return max(1, round(dpi / 25.4))
+
+
+def save_printer_queue(queue: str, path: Path | None = None) -> dict[str, Any]:
+    """更新 printer.yaml 中的 CUPS 队列名并写回磁盘。"""
+    config_path = path or (CONFIG_DIR / "printer.yaml")
+    config = load_printer_config(config_path)
+    connection = config.setdefault("connection", {})
+    connection["queue"] = queue
+    with config_path.open("w", encoding="utf-8") as f:
+        yaml.dump(
+            config,
+            f,
+            allow_unicode=True,
+            sort_keys=False,
+            default_flow_style=False,
+        )
+    return config

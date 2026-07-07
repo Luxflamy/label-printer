@@ -13,7 +13,7 @@ WEB_DIR="$ROOT_DIR/apps/web"
 if [ ! -x "$VENV_PY" ]; then
   echo "未找到 .venv，请先执行："
   echo "  python3 -m venv .venv"
-  echo "  .venv/bin/pip install -e \".[dev,api]\""
+  echo "  .venv/bin/pip install -e \".[dev,api,pdf,preview]\""
   exit 1
 fi
 

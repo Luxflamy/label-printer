@@ -22,6 +22,12 @@ export interface HealthData {
 export interface PrinterInfo {
   name: string;
   status: string;
+  selected?: boolean;
+}
+
+export interface PrinterListData {
+  printers: PrinterInfo[];
+  selected_queue: string | null;
 }
 
 export interface TemplateSummary {
@@ -76,6 +82,14 @@ export interface PrintPayload {
   template: string;
   variables: Record<string, string>;
   copies?: number;
+  printer?: string | null;
+}
+
+export interface RenderPayload {
+  template: string;
+  variables: Record<string, string>;
+  copies?: number;
+  printer?: string | null;
 }
 
 /** POST /render/preview 响应体 */
@@ -118,6 +132,7 @@ export interface BatchItem {
 export interface BatchPrintPayload {
   template: string;
   store?: string | null;
+  printer?: string | null;
   items: BatchItem[];
 }
 
@@ -134,6 +149,76 @@ export interface BatchPrintData {
   succeeded: number;
   failed: number;
   results: BatchItemResult[];
+}
+
+// ---- 校准 -------------------------------------------------------------
+
+export interface CalibrationProfile {
+  reference_x_dots: number;
+  reference_y_dots: number;
+  gap_offset_mm: number;
+}
+
+export interface StockSpec {
+  stock_code: string;
+  name: string;
+  width_mm: number;
+  height_mm: number;
+  gap_mm: number;
+  direction: number;
+}
+
+export interface CalibrationData {
+  printer: string;
+  stock_code: string;
+  profile: CalibrationProfile;
+}
+
+export interface CalibrationPreviewData {
+  printer: string;
+  stock_code: string;
+  profile: CalibrationProfile;
+  image_b64: string;
+  tspl: string;
+  width_mm: number;
+  height_mm: number;
+}
+
+export type MediaType = "gap" | "blackmark";
+export type FeedStrategy = "gapdetect" | "autodetect";
+
+export interface AutoFeedData {
+  printer: string;
+  stock_code: string;
+  media_type: MediaType;
+  strategy: FeedStrategy;
+  tspl: string;
+  message: string;
+  test_printed: boolean;
+}
+
+export type FitMode = "contain" | "cover" | "fill";
+
+export interface ShippingLabelPreviewData {
+  page_count: number;
+  page: number;
+  pdf_width_mm: number;
+  pdf_height_mm: number;
+  target_stock: string;
+  target_width_mm: number;
+  target_height_mm: number;
+  fit_mode: FitMode;
+  rotation: number;
+  scale: number;
+  image_b64: string;
+  warnings: string[];
+}
+
+export interface ShippingLabelPrintData {
+  pages_printed: number;
+  copies: number;
+  queue: string | null;
+  stock_code: string;
 }
 
 /** 打印队列条目（本地状态，含 ProductItem 完整数据） */

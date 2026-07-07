@@ -9,6 +9,7 @@ from __future__ import annotations
 import re
 from typing import Any
 
+from label_printer.calibration import CalibrationProfile
 from label_printer.tspl.commands import LabelJob
 from label_printer.tspl.layout import resolve_x_mm
 
@@ -54,17 +55,29 @@ def _font_mul(value: Any) -> int:
     return max(1, min(10, round(float(value))))
 
 
-def build_label_job(template: dict[str, Any], variables: dict[str, Any]) -> LabelJob:
+def build_label_job(
+    template: dict[str, Any],
+    variables: dict[str, Any],
+    calibration: CalibrationProfile | None = None,
+) -> LabelJob:
     """按模板 elements 构建 LabelJob，不落地为 bytes（供需要复用 job 的场景）。"""
     validate_variables(template, variables)
 
     label = template.get("label", {})
     label_width_mm = float(label["width_mm"])
+    reference = (0, 0)
+    gap_offset_mm = 0.0
+    if calibration is not None:
+        reference = (calibration.reference_x_dots, calibration.reference_y_dots)
+        gap_offset_mm = calibration.gap_offset_mm
+
     job = LabelJob(
         width_mm=label_width_mm,
         height_mm=label["height_mm"],
         gap_mm=label.get("gap_mm", 2),
+        gap_offset_mm=gap_offset_mm,
         direction=label.get("direction", 1),
+        reference=reference,
     )
 
     for element in template.get("elements", []):
@@ -113,14 +126,20 @@ def build_label_job(template: dict[str, Any], variables: dict[str, Any]) -> Labe
 
 
 def render_template(
-    template: dict[str, Any], variables: dict[str, Any], copies: int = 1
+    template: dict[str, Any],
+    variables: dict[str, Any],
+    copies: int = 1,
+    calibration: CalibrationProfile | None = None,
 ) -> bytes:
     """将模板与变量合并，输出 TSPL bytes（可直接发送给连接层）。"""
-    return build_label_job(template, variables).build(copies=copies)
+    return build_label_job(template, variables, calibration).build(copies=copies)
 
 
 def render_template_text(
-    template: dict[str, Any], variables: dict[str, Any], copies: int = 1
+    template: dict[str, Any],
+    variables: dict[str, Any],
+    copies: int = 1,
+    calibration: CalibrationProfile | None = None,
 ) -> str:
     """同 render_template，但返回可读文本，供预览接口使用。"""
-    return build_label_job(template, variables).build_text(copies=copies)
+    return build_label_job(template, variables, calibration).build_text(copies=copies)

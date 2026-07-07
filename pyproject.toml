@@ -17,8 +17,9 @@ dependencies = [
 [project.optional-dependencies]
 dev = ["pytest>=7.0"]
 # 本地 HTTP API（services/api）依赖；核心包本身不依赖 FastAPI，保持低耦合
-api = ["fastapi>=0.115", "uvicorn[standard]>=0.34"]
+api = ["fastapi>=0.115", "uvicorn[standard]>=0.34", "python-multipart>=0.0.9"]
 preview = ["python-barcode>=0.15", "qrcode[pil]>=7.4"]
+pdf = ["pymupdf>=1.24"]
 
 [tool.setuptools.packages.find]
 where = ["src"]

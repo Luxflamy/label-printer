@@ -15,6 +15,14 @@ def _escape(text: str) -> str:
     return str(text).replace('"', "'")
 
 
+def _fmt_mm(value: float) -> str:
+    """TSPL 尺寸字段：整数不带小数点。"""
+    rounded = round(value, 3)
+    if rounded == int(rounded):
+        return str(int(rounded))
+    return str(rounded)
+
+
 class LabelJob:
     """链式构建 TSPL 指令，最终 build() 输出 bytes。"""
 
@@ -23,6 +31,7 @@ class LabelJob:
         width_mm: float,
         height_mm: float,
         gap_mm: float = 2,
+        gap_offset_mm: float = 0,
         direction: int = 1,
         dots_per_mm: int = DOTS_PER_MM,
         reference: tuple[int, int] = (0, 0),
@@ -30,6 +39,7 @@ class LabelJob:
         self.width_mm = width_mm
         self.height_mm = height_mm
         self.gap_mm = gap_mm
+        self.gap_offset_mm = gap_offset_mm
         self.direction = direction
         self.dots_per_mm = dots_per_mm
         self.reference = reference
@@ -92,10 +102,23 @@ class LabelJob:
         )
         return self
 
+    def box(
+        self,
+        x_mm: float,
+        y_mm: float,
+        x_end_mm: float,
+        y_end_mm: float,
+        thickness: int = 1,
+    ) -> "LabelJob":
+        x, y = self._dots(x_mm), self._dots(y_mm)
+        x_end, y_end = self._dots(x_end_mm), self._dots(y_end_mm)
+        self._elements.append(f"BOX {x},{y},{x_end},{y_end},{thickness}")
+        return self
+
     def build(self, copies: int = 1) -> bytes:
         lines = [
-            f"SIZE {self.width_mm} mm,{self.height_mm} mm",
-            f"GAP {self.gap_mm} mm,0 mm",
+            f"SIZE {_fmt_mm(self.width_mm)} mm,{_fmt_mm(self.height_mm)} mm",
+            f"GAP {_fmt_mm(self.gap_mm)} mm,{_fmt_mm(self.gap_offset_mm)} mm",
             f"DIRECTION {self.direction}",
             f"REFERENCE {self.reference[0]},{self.reference[1]}",
             "CLS",
