@@ -1,0 +1,28 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "label-printer"
+version = "0.1.0"
+description = "TSC TTP-344M USB direct TSPL2 label printing"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "pyserial>=3.5",
+    "PyYAML>=6.0",
+    "Pillow>=10.0",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=7.0"]
+# 本地 HTTP API（services/api）依赖；核心包本身不依赖 FastAPI，保持低耦合
+api = ["fastapi>=0.115", "uvicorn[standard]>=0.34"]
+preview = ["python-barcode>=0.15", "qrcode[pil]>=7.4"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]

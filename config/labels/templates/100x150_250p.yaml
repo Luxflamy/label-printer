@@ -1,0 +1,8 @@
+# 100×150 250P — 仅尺寸基座
+extends:
+  - ../sizes/100x150_250p.yaml
+
+name: 100x150_250p
+description: "100×150mm 250P 空白基座（仅尺寸，无元素）"
+
+elements: []

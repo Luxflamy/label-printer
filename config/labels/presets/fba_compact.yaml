@@ -1,0 +1,49 @@
+# FBA 小标签排版预设 — 50×30mm 紧凑型
+# 顺序：大 SKU → FNSKU 条码（放大）→ FNSKU 代码 → 短标题
+meta:
+  preset: fba_compact
+  description: "大SKU + 放大FNSKU条码 + FNSKU代码 + 短标题（FBA风格）"
+
+elements:
+
+  - id: sku
+    type: text
+    align: center
+    x_mm: 1
+    y_mm: 5
+    font: "2"
+    x_mul: 1.5
+    y_mul: 1.5
+    content: "{{ sku }}"
+
+  - id: fnsku_barcode
+    type: barcode
+    align: center
+    x_mm: -0.5
+    y_mm: 10.3
+    symbology: "128" # 条码类型
+    height_mm: 20
+    human_readable: false # 不显示条码内容
+    narrow: 3 # 最小条宽增加
+    wide: 6 # 宽条比例增加
+    content: "{{ fnsku }}"
+
+  - id: fnsku_code
+    type: text
+    align: center
+    x_mm: 10
+    y_mm: 32
+    font: "3"
+    x_mul: 1
+    y_mul: 1
+    content: "{{ fnsku }}"
+
+  - id: short_title
+    type: text
+    align: center
+    x_mm: 6
+    y_mm: 36
+    font: "1"
+    x_mul: 1       # 横向放大倍数
+    y_mul: 1.5       # 纵向放大倍数
+    content: "{{ short_title }}"

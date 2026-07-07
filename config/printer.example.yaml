@@ -1,0 +1,27 @@
+# 复制为 printer.yaml 并按本机实际情况填写
+# cp config/printer.example.yaml config/printer.yaml
+
+connection:
+  # cups_raw   — 打印机已在"系统设置 → 打印机与扫描仪"里添加（推荐，多数 Mac 场景）
+  # usb_serial — 打印机暴露 /dev/cu.* 虚拟串口（较少见，需运行 discover_printer.sh 确认）
+  type: cups_raw
+
+  # type: cups_raw 时填写：CUPS 队列名，运行 `lpstat -p` 查看
+  queue: TSC_TE344
+
+  # type: usb_serial 时改用下面两项，并把 type 改为 usb_serial
+  # port: /dev/cu.usbserial-XXXX
+  # baudrate: 9600
+
+  timeout: 10
+  # 每次写入后等待毫秒数，批量打印时可适当增大
+  write_delay_ms: 50
+
+printer:
+  model: TE344
+  dpi: 203
+  dots_per_mm: 8
+
+logging:
+  level: INFO
+  file: data/logs/label_printer.log

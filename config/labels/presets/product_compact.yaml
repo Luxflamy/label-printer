@@ -1,0 +1,33 @@
+# 小标签排版预设 — 适用于 50×30 等紧凑型标签
+# align: center 由 renderer 按标签宽度自动计算 x 坐标
+meta:
+  preset: product_compact
+  description: "品名 + SKU + 条码（紧凑，水平居中）"
+
+elements:
+  - id: product_name
+    type: text
+    align: center
+    y_mm: 2
+    font: "3"
+    x_mul: 1
+    y_mul: 1
+    content: "{{ product_name }}"
+
+  - id: sku
+    type: text
+    align: center
+    y_mm: 9
+    font: "2"
+    x_mul: 1
+    y_mul: 1
+    content: "SKU: {{ sku }}"
+
+  - id: barcode
+    type: barcode
+    align: center
+    y_mm: 16
+    symbology: "128"
+    height_mm: 12
+    human_readable: true
+    content: "{{ barcode }}"

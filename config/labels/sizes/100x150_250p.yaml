@@ -1,0 +1,16 @@
+# 尺寸规格 — 仅描述纸张，不含排版元素
+meta:
+  stock_code: "250P"
+  description: "100×150mm 有间隙标签纸（250P）"
+
+label:
+  width_mm: 100
+  height_mm: 150
+  gap_mm: 2
+  direction: 1
+
+margins_mm:
+  left: 5
+  top: 5
+  right: 5
+  bottom: 5

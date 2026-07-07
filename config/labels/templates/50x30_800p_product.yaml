@@ -1,0 +1,7 @@
+# 50×30 800P 商品标签 — 与「小标签」共用排版，保留旧 ID 兼容脚本/测试
+extends:
+  - ../sizes/50x30_800p.yaml
+  - ../presets/fba_compact.yaml
+
+name: 50x30_800p_product
+description: "（兼容）同「小标签」布局 — 50×30mm 800P"

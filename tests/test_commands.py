@@ -1,0 +1,40 @@
+"""TSPL 命令构建单元测试。"""
+
+from label_printer.tspl.commands import LabelJob
+from label_printer.utils.units import mm_to_dots
+
+
+def test_mm_to_dots() -> None:
+    assert mm_to_dots(10) == 80
+    assert mm_to_dots(40) == 320
+
+
+def test_label_job_hello() -> None:
+    job = LabelJob(width_mm=40, height_mm=30, gap_mm=2)
+    job.text(x_mm=2.5, y_mm=2.5, content="USB TEST", font="3")
+    data = job.build()
+    assert b"SIZE 40 mm,30 mm" in data
+    assert b"GAP 2 mm,0 mm" in data
+    assert b'TEXT 20,20,"3",0,1,1,"USB TEST"' in data
+    assert b"PRINT 1" in data
+    assert data.endswith(b"\r\n")
+
+
+def test_label_job_barcode_and_qrcode() -> None:
+    job = LabelJob(width_mm=50, height_mm=30)
+    job.barcode(x_mm=3, y_mm=16, content="123456", symbology="128", height_mm=12)
+    job.qrcode(x_mm=30, y_mm=5, content="hello")
+    data = job.build_text()
+    assert 'BARCODE 24,128,"128",96,1,0,2,4,"123456"' in data
+    assert 'QRCODE 240,40,M,4,A,0,"hello"' in data
+
+
+def test_label_job_escapes_quotes() -> None:
+    job = LabelJob(width_mm=40, height_mm=30)
+    job.text(x_mm=0, y_mm=0, content='say "hi"')
+    assert "say 'hi'" in job.build_text()
+
+
+def test_label_job_multiple_copies() -> None:
+    job = LabelJob(width_mm=40, height_mm=30)
+    assert b"PRINT 5" in job.build(copies=5)

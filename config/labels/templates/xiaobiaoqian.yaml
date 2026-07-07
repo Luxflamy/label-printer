@@ -1,0 +1,10 @@
+# 小标签 — 默认 FBA 商品标签（50×30mm 800P）
+extends:
+  - ../sizes/50x30_800p.yaml
+  - ../presets/fba_compact.yaml
+
+name: 小标签
+description: "大SKU + 放大FNSKU条码 + FNSKU代码 + 短标题（FBA风格，50×30mm）"
+
+meta:
+  default: true

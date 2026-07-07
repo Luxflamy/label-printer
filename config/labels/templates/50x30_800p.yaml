@@ -1,0 +1,8 @@
+# 50×30 800P — 仅尺寸基座，供客制化时 extends 引用
+extends:
+  - ../sizes/50x30_800p.yaml
+
+name: 50x30_800p
+description: "50×30mm 800P 空白基座（仅尺寸，无元素）"
+
+elements: []

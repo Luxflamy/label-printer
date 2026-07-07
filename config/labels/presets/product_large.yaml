@@ -1,0 +1,49 @@
+# 大标签排版预设 — 适用于 100×150 等物流/仓储标签
+meta:
+  preset: product_large
+  description: "品名 + SKU + 条码 + 二维码（水平居中）"
+
+elements:
+  - id: product_name
+    type: text
+    align: center
+    y_mm: 5
+    font: "4"
+    x_mul: 1
+    y_mul: 1
+    content: "{{ product_name }}"
+
+  - id: sku
+    type: text
+    align: center
+    y_mm: 22
+    font: "3"
+    x_mul: 1
+    y_mul: 1
+    content: "SKU: {{ sku }}"
+
+  - id: barcode
+    type: barcode
+    align: center
+    y_mm: 38
+    symbology: "128"
+    height_mm: 18
+    human_readable: true
+    content: "{{ barcode }}"
+
+  - id: qrcode
+    type: qrcode
+    align: center
+    y_mm: 85
+    cell_width: 6
+    error_correction: M
+    content: "{{ barcode }}"
+
+  - id: remark
+    type: text
+    align: center
+    y_mm: 132
+    font: "2"
+    x_mul: 1
+    y_mul: 1
+    content: "{{ remark }}"

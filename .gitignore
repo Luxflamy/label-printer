@@ -1,0 +1,31 @@
+# Python
+.venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+.pytest_cache/
+
+# 商品库：仅示例入库，真实业务 JSON 保留本地
+data/stores/*.json
+!data/stores/example_store.json
+
+# 本机配置（含 USB 端口路径）
+config/printer.yaml
+
+# 日志与临时输出
+data/logs/
+data/output/
+*.prn
+
+# 编辑器
+.idea/
+.vscode/
+.DS_Store
+
+# Node / Next.js（apps/web 自身也有一份 .gitignore，这里做兜底）
+node_modules/
+.next/
+apps/web/.env*.local
+apps/web/.next-project-root

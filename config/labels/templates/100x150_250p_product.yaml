@@ -1,0 +1,11 @@
+# 100×150 250P — 常用大标签（品名 + SKU + 条码 + 二维码）
+extends:
+  - ../sizes/100x150_250p.yaml
+  - ../presets/product_large.yaml
+
+name: 100x150_250p_product
+description: "100×150mm 250P 大标签（品名 + SKU + 条码 + 二维码 + 备注）"
+
+# 若不需要二维码，可在此删除或覆盖：
+# elements_mode: replace
+# elements: [...]
