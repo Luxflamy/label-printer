@@ -5,12 +5,15 @@ meta:
 
 elements:
 
+  # 用位图文字而非 TSC 内置字号：font_size_mm 只是起始值，
+  # render_text_bitmap 会在放不下时自动逐级缩小并居中，
+  # 因此短 SKU 用大字、长 SKU 自动收缩，始终填满可用区域。
   - id: sku
-    type: text
-    align: center   # 居中时 x_mm 作为额外偏移，保持 0 即可
-    x_mm: 0
-    y_mm: 13
-    font: "2"
-    x_mul: 2        # 24 dots/字，50mm 标签约可容纳 16 字符
-    y_mul: 2
+    type: bitmap_text
+    x_mm: 2
+    y_mm: 3
+    width_mm: 46
+    height_mm: 24
+    font_size_mm: 18
+    wrap: false
     content: "{{ sku }}"

@@ -202,9 +202,12 @@ class LabelPrinterService:
         self,
         config_dir: Path | None = None,
         labels_dir: Path | None = None,
+        history_path: Path | None = None,
     ) -> None:
         self._config_dir = config_dir or CONFIG_DIR
         self._labels_dir = labels_dir or LABELS_DIR
+        # None 表示使用 history 模块的默认路径（data/sku_history.json）
+        self._history_path = history_path
 
     # ---- 配置 ---------------------------------------------------------
 
@@ -709,7 +712,9 @@ class LabelPrinterService:
         printed = self.print_one(
             template_name, {"sku": normalized}, copies=copies, printer=printer
         )
-        record = record_sku(normalized, template=template_name)
+        record = record_sku(
+            normalized, template=template_name, path=self._history_path
+        )
 
         return SkuLabelPrintResult(
             sku=record.sku,
@@ -722,10 +727,10 @@ class LabelPrinterService:
         )
 
     def list_sku_history(self, keyword: str = "", limit: int = 20) -> list[SkuRecord]:
-        return query_skus(keyword, limit=limit)
+        return query_skus(keyword, limit=limit, path=self._history_path)
 
     def delete_sku_history(self, sku: str) -> bool:
-        return delete_sku(sku)
+        return delete_sku(sku, path=self._history_path)
 
     # ---- 内部 -----------------------------------------------------------
 

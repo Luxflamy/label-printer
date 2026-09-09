@@ -18,6 +18,9 @@ data/Update/
 config/printer.yaml
 config/calibration.yaml
 
+# 已打印 SKU 历史（本机数据）
+data/sku_history.json
+
 # 日志与临时输出
 data/logs/
 data/output/

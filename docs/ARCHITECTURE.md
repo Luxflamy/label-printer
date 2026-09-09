@@ -54,6 +54,16 @@ renderer.py    {{ variable }} 替换 + 调用 LabelJob
 
 模板只描述「画什么」，不描述「怎么连打印机」。
 
+### `history/` — 打印历史层
+
+```
+sku_history.py   已打印 SKU 的记录与查询（data/sku_history.json）
+```
+
+只做存储与查询，不依赖 `templates/` / `tspl/` / `connection/`，因此 Service、CLI、
+测试都能独立复用。写入用「临时文件 + 原子替换」，文件损坏时降级为空历史，
+不会阻断打印主流程。
+
 ### `printer.py` — 编排层
 
 高层 API，供 CLI 和后续 Web 服务复用：
@@ -86,6 +96,7 @@ main.py
 
 templates/ → tspl/
 connection/ → （无内部依赖）
+history/ → config.py（仅取数据目录）
 tspl/ → utils/units.py
 ```
 
@@ -96,6 +107,7 @@ tspl/ → utils/units.py
 | `config/printer.example.yaml` | ✅ | 示例配置 |
 | `config/printer.yaml` | ❌ | 本机实际端口，加入 .gitignore |
 | `config/labels/*.yaml` | ✅ | 标签模板 |
+| `data/sku_history.json` | ❌ | 已打印 SKU 历史，本机数据，加入 .gitignore |
 
 ## 错误处理策略
 
