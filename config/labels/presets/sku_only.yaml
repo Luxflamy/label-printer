@@ -1,0 +1,16 @@
+# 纯 SKU 小标签排版预设 — 50×30mm，整张只放一行居中放大的 SKU
+meta:
+  preset: sku_only
+  description: "仅 SKU 文本（居中放大），供手工输入的自定义小标签使用"
+
+elements:
+
+  - id: sku
+    type: text
+    align: center   # 居中时 x_mm 作为额外偏移，保持 0 即可
+    x_mm: 0
+    y_mm: 13
+    font: "2"
+    x_mul: 2        # 24 dots/字，50mm 标签约可容纳 16 字符
+    y_mul: 2
+    content: "{{ sku }}"

@@ -221,6 +221,37 @@ export interface ShippingLabelPrintData {
   stock_code: string;
 }
 
+/** 已打印过的 SKU 历史记录 */
+export interface SkuRecord {
+  sku: string;
+  first_printed_at: string;
+  last_printed_at: string;
+  print_count: number;
+  last_template: string | null;
+}
+
+export interface SkuHistoryData {
+  items: SkuRecord[];
+  total: number;
+}
+
+export interface SkuLabelPrintData {
+  sku: string;
+  template: string;
+  copies: number;
+  queue: string | null;
+  print_count: number;
+  first_printed_at: string;
+  last_printed_at: string;
+}
+
+export interface SkuLabelPrintPayload {
+  sku: string;
+  template?: string | null;
+  copies?: number;
+  printer?: string | null;
+}
+
 /** 打印队列条目（本地状态，含 ProductItem 完整数据） */
 export interface QueueEntry {
   product: ProductItem;

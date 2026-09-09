@@ -10,6 +10,7 @@ import yaml
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 CONFIG_DIR = PROJECT_ROOT / "config"
 LABELS_DIR = CONFIG_DIR / "labels"
+DATA_DIR = PROJECT_ROOT / "data"
 
 
 def load_printer_config(path: Path | None = None) -> dict[str, Any]:

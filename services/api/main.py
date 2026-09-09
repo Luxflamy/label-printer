@@ -11,7 +11,17 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from label_printer.api.service import ServiceError
-from services.api.routers import batch_print, calibration, health, print_job, printers, products, shipping_label, templates
+from services.api.routers import (
+    batch_print,
+    calibration,
+    health,
+    print_job,
+    printers,
+    products,
+    shipping_label,
+    sku_labels,
+    templates,
+)
 from services.api.schemas import Envelope, ErrorInfo
 
 _ERROR_STATUS: dict[str, int] = {
@@ -20,6 +30,7 @@ _ERROR_STATUS: dict[str, int] = {
     "CONFIG_ERROR": 500,
     "PRINTER_CONNECTION_ERROR": 502,
     "PRINTER_NOT_FOUND": 404,
+    "EMPTY_SKU": 422,
     "PDF_ERROR": 422,
     "SERVICE_ERROR": 500,
 }
@@ -53,6 +64,7 @@ app.include_router(health.router)
 app.include_router(printers.router)
 app.include_router(calibration.router)
 app.include_router(shipping_label.router)
+app.include_router(sku_labels.router)
 app.include_router(templates.router)
 app.include_router(print_job.router)
 app.include_router(products.router)

@@ -1,0 +1,7 @@
+# 小标签（纯 SKU）— 复用 50×30mm 800P 尺寸基座，仅打印 SKU
+extends:
+  - ../sizes/50x30_800p.yaml
+  - ../presets/sku_only.yaml
+
+name: 小标签（纯SKU）
+description: "仅 SKU 的 50×30mm 小标签，供手工输入打印"
