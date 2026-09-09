@@ -2,7 +2,11 @@
 
 from PIL import Image
 
-from label_printer.tspl.bitmap import pack_monochrome_image, rasterize_for_label
+from label_printer.tspl.bitmap import (
+    pack_monochrome_image,
+    rasterize_for_label,
+    render_text_bitmap,
+)
 
 
 def test_pack_monochrome_single_black_pixel() -> None:
@@ -51,3 +55,37 @@ def test_rasterize_scale_enlarges_content() -> None:
     base_ink = sum(1 for p in base.getdata() if p == 0)
     enlarged_ink = sum(1 for p in enlarged.getdata() if p == 0)
     assert enlarged_ink > base_ink
+
+
+def test_render_chinese_text_bitmap_has_ink() -> None:
+    image = render_text_bitmap(
+        "海外仓发货",
+        width_dots=720,
+        height_dots=200,
+        font_size_dots=128,
+    )
+
+    assert image.mode == "1"
+    assert image.size == (720, 200)
+    assert any(pixel == 0 for pixel in image.getdata())
+
+
+def test_render_text_bitmap_wraps_long_title() -> None:
+    title = (
+        "MooMee Duvet Cover Set Heathered Dark Grey King Soft Comfy Breathable"
+    )
+    image = render_text_bitmap(
+        title,
+        width_dots=360,  # ~45mm @ 8 dots/mm
+        height_dots=60,  # ~7.5mm
+        font_size_dots=20,
+        wrap=True,
+        max_lines=2,
+    )
+    assert image.mode == "1"
+    assert image.size == (360, 60)
+    # 上下两行都应有墨点（换行生效）
+    top_ink = any(image.getpixel((x, y)) == 0 for y in range(0, 28) for x in range(360))
+    bottom_ink = any(image.getpixel((x, y)) == 0 for y in range(32, 60) for x in range(360))
+    assert top_ink
+    assert bottom_ink

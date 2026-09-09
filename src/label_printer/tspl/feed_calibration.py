@@ -26,6 +26,7 @@ def build_auto_feed_calibration_bytes(
     strategy: FeedStrategy = "gapdetect",
     dots_per_mm: int = 8,
     bline_mm: float = 3.0,
+    formfeed_after: bool = False,
 ) -> bytes:
     """生成走纸传感器校准 TSPL（不打印，仅走纸定位）。
 
@@ -33,8 +34,8 @@ def build_auto_feed_calibration_bytes(
     - 不使用 SET GAP AUTO（会额外走 2~3 张，失败时可能走 10~20 英寸）
     - 不使用 HOME（传感器未校准时会无限找原点）
     - 使用 LIMITFEED 限制最大走纸长度
-    - GAPDETECT 不传 x,y，由打印机自动测定（参数偏差会导致一直找间隙）
-    - 最后用 FORMFEED 走到下一张标签起始（需已设 SIZE/GAP）
+    - 已知间隙纸尺寸时向 GAPDETECT 传入纸长和间隙，减少自动探索走纸
+    - FORMFEED 默认关闭，只有实机需要额外对齐时才走到下一张标签起始
     """
     width_mm = float(label["width_mm"])
     height_mm = float(label["height_mm"])
@@ -55,9 +56,12 @@ def build_auto_feed_calibration_bytes(
         lines.append("AUTODETECT")
     else:
         lines.insert(1, f"GAP {_fmt_mm(gap_mm)} mm,0 mm")
-        lines.append("GAPDETECT")
+        paper_dots = round(height_mm * dots_per_mm)
+        gap_dots = round(gap_mm * dots_per_mm)
+        lines.append(f"GAPDETECT {paper_dots},{gap_dots}")
 
-    lines.append("FORMFEED")
+    if formfeed_after:
+        lines.append("FORMFEED")
     return (EOL.join(lines) + EOL).encode("utf-8")
 
 
@@ -67,7 +71,8 @@ def build_auto_feed_calibration_text(
     strategy: FeedStrategy = "gapdetect",
     dots_per_mm: int = 8,
     bline_mm: float = 3.0,
+    formfeed_after: bool = False,
 ) -> str:
     return build_auto_feed_calibration_bytes(
-        label, media_type, strategy, dots_per_mm, bline_mm
+        label, media_type, strategy, dots_per_mm, bline_mm, formfeed_after
     ).decode("utf-8")

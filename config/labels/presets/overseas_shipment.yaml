@@ -1,0 +1,71 @@
+# 海外仓发货标签排版 — 100×150mm 250P
+meta:
+  preset: overseas_shipment
+  description: "海外仓发货 + 当地日期时间 + SKU + SKU条码"
+  timezone: "America/Chicago"
+  computed_variables:
+    shipped_date: "%Y-%m-%d"
+    shipped_time: "%H:%M:%S %Z"
+
+label:
+  # TE344 300dpi：中文位图和坐标按 12 dots/mm 生成
+  dots_per_mm: 12
+
+elements:
+  - id: shipping_title
+    type: bitmap_text
+    align: center
+    y_mm: 5
+    width_mm: 90
+    height_mm: 25
+    font_size_mm: 17
+    stroke_width_mm: 0.25
+    content: "海外仓发货"
+
+  - id: date_caption
+    type: text
+    align: center
+    y_mm: 34
+    font: "3"
+    x_mul: 2
+    y_mul: 2
+    content: "SHIP DATE"
+
+  - id: shipped_date
+    type: text
+    align: center
+    y_mm: 45
+    font: "5"
+    x_mul: 2
+    y_mul: 2
+    content: "{{ shipped_date }}"
+
+  - id: shipped_time
+    type: text
+    align: center
+    y_mm: 62
+    font: "3"
+    x_mul: 2
+    y_mul: 2
+    content: "{{ shipped_time }}"
+
+  - id: sku
+    type: bitmap_text
+    align: center
+    y_mm: 80
+    width_mm: 90
+    height_mm: 16
+    font_size_mm: 10
+    stroke_width_mm: 0.1
+    content: "SKU: {{ sku }}"
+
+  - id: sku_barcode
+    type: barcode
+    align: center
+    y_mm: 105
+    symbology: "128"
+    height_mm: 24
+    human_readable: false
+    narrow: 2
+    wide: 4
+    content: "{{ sku }}"

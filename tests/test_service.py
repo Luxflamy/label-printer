@@ -178,6 +178,21 @@ def test_print_raw_sends_given_bytes(mock_build_connection: MagicMock, service: 
     assert fake_conn.sent == [b"SIZE 40 mm,30 mm\r\nPRINT 1\r\n"]
 
 
+@patch("label_printer.api.service.build_connection")
+def test_auto_feed_uses_printer_dpi_and_skips_formfeed_by_default(
+    mock_build_connection: MagicMock,
+    service: LabelPrinterService,
+) -> None:
+    fake_conn = FakeConnection()
+    mock_build_connection.return_value = fake_conn
+
+    result = service.auto_feed_calibrate("TSC_TE344", "800P")
+
+    assert b"GAPDETECT 240,16\r\n" in fake_conn.sent[0]
+    assert b"FORMFEED" not in fake_conn.sent[0]
+    assert "省纸模式" in result.message
+
+
 def test_list_printers_returns_list(service: LabelPrinterService) -> None:
     # 不 mock，直接调用真实 lpstat；仅断言返回类型正确，不依赖具体打印机
     printers = service.list_printers()

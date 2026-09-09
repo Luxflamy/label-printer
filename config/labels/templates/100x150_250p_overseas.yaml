@@ -1,0 +1,7 @@
+# 100×150 250P — 海外仓发货标签
+extends:
+  - ../sizes/100x150_250p.yaml
+  - ../presets/overseas_shipment.yaml
+
+name: 100x150_250p_overseas
+description: "100×150mm 海外仓发货标签（当地日期时间 + SKU + 条码）"

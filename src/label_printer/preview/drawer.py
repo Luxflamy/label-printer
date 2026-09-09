@@ -15,7 +15,8 @@ from typing import Any
 from PIL import Image, ImageDraw, ImageFont
 
 from label_printer.calibration import CalibrationProfile
-from label_printer.templates.renderer import build_label_job, validate_variables
+from label_printer.templates.renderer import enrich_variables, validate_variables
+from label_printer.tspl.bitmap import render_text_bitmap
 from label_printer.tspl.constants import DOTS_PER_MM
 from label_printer.tspl.layout import (
     FONT_CHAR_WIDTH_DOTS,
@@ -79,8 +80,8 @@ def _draw_barcode_image(
 ) -> Image.Image:
     """生成条码图像，缩放到 fit-inside(max_width_px, target_h_px) 后返回。
 
-    python-barcode 的 module_width 单位是 mm；用 96dpi + module_width=1.5mm
-    确保每模块 ≥ 5px，然后将生成结果等比 fit-inside 缩放。
+    python-barcode 的 module_width 单位是 mm；按接近实打的模块宽度生成，
+    再将结果等比 fit-inside 到标签可用宽高。
     """
     try:
         import barcode as bc
@@ -103,8 +104,9 @@ def _draw_barcode_image(
 
     target_h_px = _px(bar_height_mm)
     render_dpi = 96
-    module_w_mm = 1.5   # 96dpi: 1mm ≈ 3.78px → 1.5mm ≈ 5.7px，安全
-    gen_height_mm = 10.0
+    # 先按接近实际标签的模块宽度和目标高度生成，避免长条码为适应宽度而被整体压矮。
+    module_w_mm = 0.4
+    gen_height_mm = bar_height_mm
     text_distance = 2.0 if human_readable else 0.0
 
     buf = io.BytesIO()
@@ -182,11 +184,13 @@ def draw_label_png(
     calibration: CalibrationProfile | None = None,
 ) -> bytes:
     """主入口：模板 + 变量 → PNG bytes（内存，不写文件）。"""
+    variables = enrich_variables(template, variables)
     validate_variables(template, variables)
 
     label = template.get("label", {})
     width_mm = float(label["width_mm"])
     height_mm = float(label["height_mm"])
+    dots_per_mm = int(label.get("dots_per_mm", DOTS_PER_MM))
     width_px = _px(width_mm)
     height_px = _px(height_mm)
 
@@ -213,7 +217,7 @@ def draw_label_png(
         raw_content = element.get("content", "")
         content = _substitute(raw_content, variables) if raw_content else raw_content
 
-        x_mm = resolve_x_mm(element, content, width_mm) + ref_x_mm
+        x_mm = resolve_x_mm(element, content, width_mm, dots_per_mm) + ref_x_mm
         y_mm = float(element.get("y_mm", 0)) + ref_y_mm
         x_px = _px(x_mm)
         y_px = _px(y_mm)
@@ -231,6 +235,24 @@ def draw_label_png(
             text_x = _align_x_px(align, width_px, text_w, x_px)
             draw.text((text_x, y_px), content, fill=TEXT_COLOR, font=pil_font)
 
+        elif el_type == "bitmap_text":
+            bitmap_width_px = _px(float(element["width_mm"]))
+            bitmap_height_px = _px(float(element["height_mm"]))
+            text_img = render_text_bitmap(
+                content,
+                width_dots=bitmap_width_px,
+                height_dots=bitmap_height_px,
+                font_size_dots=_px(float(element.get("font_size_mm", 12))),
+                font_path=element.get("font_path"),
+                stroke_width_dots=_px(
+                    float(element.get("stroke_width_mm", 0))
+                ),
+                wrap=bool(element.get("wrap", False)),
+                max_lines=int(element.get("max_lines", 2)),
+                line_spacing=float(element.get("line_spacing", 1.15)),
+            )
+            img.paste(text_img.convert("RGB"), (x_px, y_px))
+
         elif el_type == "barcode":
             height_mm_bar = float(element.get("height_mm", 10))
             human_readable = bool(element.get("human_readable", True))
@@ -244,14 +266,29 @@ def draw_label_png(
                 paste_x = _align_x_px(align, width_px, bc_img.width, x_px)
                 img.paste(bc_img, (paste_x, y_px))
             except Exception:
-                fw = _px(min(40, width_mm - float(element.get("x_mm", 0)) - 2))
+                fw = _px(min(80, width_mm - 10))
                 fh = _px(height_mm_bar)
-                draw.rectangle(
-                    [x_px, y_px, x_px + fw, y_px + fh],
-                    outline=BARCODE_COLOR, width=2,
+                fallback_x = _align_x_px(
+                    element.get("align", "left"),
+                    width_px,
+                    fw,
+                    x_px,
                 )
-                draw.text((x_px + 4, y_px + 4), content[:12], fill=TEXT_COLOR,
-                          font=_get_pil_font(12))
+                draw.rectangle(
+                    [fallback_x, y_px, fallback_x + fw, y_px + fh],
+                    outline=BARCODE_COLOR,
+                    width=2,
+                )
+                pattern = "".join(f"{ord(char):08b}" for char in content)
+                module_width = max(1, fw // max(1, len(pattern)))
+                bar_x = fallback_x
+                for bit in pattern:
+                    if bit == "1":
+                        draw.rectangle(
+                            [bar_x, y_px, bar_x + module_width, y_px + fh],
+                            fill=BARCODE_COLOR,
+                        )
+                    bar_x += module_width
 
         elif el_type == "qrcode":
             cell_width = int(element.get("cell_width", 4))

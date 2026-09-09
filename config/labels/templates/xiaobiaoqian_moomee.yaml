@@ -1,0 +1,7 @@
+# MooMee 小标签 — 独立于默认「小标签」，可单独调整排版
+extends:
+  - ../sizes/50x30_800p.yaml
+  - ../presets/moomee_compact.yaml
+
+name: 小标签 MooMee
+description: "MooMee 专用小标签 — 大SKU + 短标题自动换行 + 加宽条码 + 条码数字（50×30mm）"

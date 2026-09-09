@@ -111,6 +111,7 @@ export default function CalibratePage() {
   const [selectedStock, setSelectedStock] = useState<string | null>(null);
   const [mediaType, setMediaType] = useState<MediaType>("gap");
   const [strategy, setStrategy] = useState<FeedStrategy>("gapdetect");
+  const [formfeedAfter, setFormfeedAfter] = useState(false);
 
   const {
     stocks,
@@ -143,7 +144,7 @@ export default function CalibratePage() {
   const busy = loading || previewing || saving || printing || autoFeeding;
 
   const handleAutoFeed = (withTestPrint: boolean) => {
-    autoFeedCalibrate(mediaType, strategy, withTestPrint);
+    autoFeedCalibrate(mediaType, strategy, withTestPrint, formfeedAfter);
   };
 
   return (
@@ -269,6 +270,15 @@ export default function CalibratePage() {
                 ))}
               </div>
             )}
+            <label className="flex items-center gap-2 text-[10px] text-blue-700/80 dark:text-blue-300/80">
+              <input
+                type="checkbox"
+                checked={formfeedAfter}
+                disabled={busy}
+                onChange={(event) => setFormfeedAfter(event.target.checked)}
+              />
+              校准后额外定位到下一张（位置不准时启用，会多走纸）
+            </label>
             <button
               type="button"
               disabled={busy || !selectedQueue || !selectedStock}

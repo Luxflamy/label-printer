@@ -6,6 +6,7 @@ import { PrintButton } from "@/components/print-button";
 import { StatusBanner } from "@/components/status-banner";
 import { usePdfShipping } from "@/hooks/use-pdf-shipping";
 import { usePrinters } from "@/hooks/use-printers";
+import { SHIPPING_PREFERRED_PRINTER } from "@/lib/config";
 import type { FitMode } from "@/types/api";
 
 export default function ShippingLabelPage() {
@@ -18,7 +19,7 @@ export default function ShippingLabelPage() {
     lastUpdated,
     selectPrinter,
     refresh: refreshPrinters,
-  } = usePrinters();
+  } = usePrinters({ preferredQueue: SHIPPING_PREFERRED_PRINTER });
 
   const {
     file,

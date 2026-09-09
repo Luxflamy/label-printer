@@ -7,9 +7,12 @@ dist/
 build/
 .pytest_cache/
 
-# 商品库：仅示例入库，真实业务 JSON 保留本地
+# 商品库：真实业务 JSON 保留本地，不入库
 data/stores/*.json
-!data/stores/example_store.json
+
+# 业务导入文件（Excel 等）
+data/imports/
+data/Update/
 
 # 本机配置（含 USB 端口路径、校准偏移）
 config/printer.yaml

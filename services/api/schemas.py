@@ -172,6 +172,47 @@ class BatchPrintData(BaseModel):
     results: list[BatchItemResult]
 
 
+# ---- 自定义 SKU 小标签 -------------------------------------------------------
+
+class SkuLabelPrintRequest(BaseModel):
+    sku: str
+    template: str | None = None
+    copies: int = 1
+    printer: str | None = None
+
+
+class SkuRecordSchema(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    sku: str
+    first_printed_at: str
+    last_printed_at: str
+    print_count: int
+    last_template: str | None = None
+
+
+class SkuLabelPrintData(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    sku: str
+    template: str
+    copies: int
+    queue: str | None = None
+    print_count: int
+    first_printed_at: str
+    last_printed_at: str
+
+
+class SkuHistoryData(BaseModel):
+    items: list[SkuRecordSchema]
+    total: int
+
+
+class SkuDeleteData(BaseModel):
+    sku: str
+    deleted: bool = True
+
+
 # ---- 校准 --------------------------------------------------------------
 
 class CalibrationProfileSchema(BaseModel):
@@ -237,6 +278,7 @@ class AutoFeedRequest(BaseModel):
     media_type: Literal["gap", "blackmark"] = "gap"
     strategy: Literal["gapdetect", "autodetect"] = "gapdetect"
     print_test_after: bool = False
+    formfeed_after: bool = False
 
 
 class AutoFeedData(BaseModel):

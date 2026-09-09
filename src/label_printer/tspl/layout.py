@@ -102,6 +102,8 @@ def resolve_x_mm(
             content,
             cell_width=int(element.get("cell_width", 4)),
         )
+    elif el_type == "bitmap_text":
+        width_dots = mm_to_dots(float(element["width_mm"]), dots_per_mm)
     else:
         return base_x_mm
 

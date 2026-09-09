@@ -6,6 +6,7 @@
 
 from __future__ import annotations
 
+from label_printer.tspl.bitmap import BitmapPayload
 from label_printer.tspl.constants import DOTS_PER_MM, EOL
 from label_printer.utils.units import mm_to_dots
 
@@ -43,10 +44,15 @@ class LabelJob:
         self.direction = direction
         self.dots_per_mm = dots_per_mm
         self.reference = reference
-        self._elements: list[str] = []
+        self._elements: list[bytes] = []
+        self._display_elements: list[str] = []
 
     def _dots(self, mm: float) -> int:
         return mm_to_dots(mm, self.dots_per_mm)
+
+    def _append_command(self, command: str) -> None:
+        self._elements.append(command.encode("utf-8"))
+        self._display_elements.append(command)
 
     def text(
         self,
@@ -59,7 +65,7 @@ class LabelJob:
         y_mul: int = 1,
     ) -> "LabelJob":
         x, y = self._dots(x_mm), self._dots(y_mm)
-        self._elements.append(
+        self._append_command(
             f'TEXT {x},{y},"{font}",{rotation},{x_mul},{y_mul},"{_escape(content)}"'
         )
         return self
@@ -79,7 +85,7 @@ class LabelJob:
         x, y = self._dots(x_mm), self._dots(y_mm)
         height = self._dots(height_mm)
         readable = 1 if human_readable else 0
-        self._elements.append(
+        self._append_command(
             f'BARCODE {x},{y},"{symbology}",{height},{readable},'
             f'{rotation},{narrow},{wide},"{_escape(content)}"'
         )
@@ -96,7 +102,7 @@ class LabelJob:
         rotation: int = 0,
     ) -> "LabelJob":
         x, y = self._dots(x_mm), self._dots(y_mm)
-        self._elements.append(
+        self._append_command(
             f'QRCODE {x},{y},{error_correction},{cell_width},{mode},'
             f'{rotation},"{_escape(content)}"'
         )
@@ -112,22 +118,47 @@ class LabelJob:
     ) -> "LabelJob":
         x, y = self._dots(x_mm), self._dots(y_mm)
         x_end, y_end = self._dots(x_end_mm), self._dots(y_end_mm)
-        self._elements.append(f"BOX {x},{y},{x_end},{y_end},{thickness}")
+        self._append_command(f"BOX {x},{y},{x_end},{y_end},{thickness}")
+        return self
+
+    def bitmap(
+        self,
+        x_mm: float,
+        y_mm: float,
+        payload: BitmapPayload,
+        mode: int = 0,
+    ) -> "LabelJob":
+        """添加 TSPL BITMAP 原始二进制数据。"""
+        x, y = self._dots(x_mm), self._dots(y_mm)
+        header = (
+            f"BITMAP {x},{y},{payload.width_bytes},{payload.height_dots},{mode},"
+        )
+        self._elements.append(header.encode("ascii") + payload.data)
+        self._display_elements.append(f"{header}<{len(payload.data)} binary bytes>")
         return self
 
     def build(self, copies: int = 1) -> bytes:
+        header_lines = [
+            f"SIZE {_fmt_mm(self.width_mm)} mm,{_fmt_mm(self.height_mm)} mm",
+            f"GAP {_fmt_mm(self.gap_mm)} mm,{_fmt_mm(self.gap_offset_mm)} mm",
+            f"DIRECTION {self.direction}",
+            f"REFERENCE {self.reference[0]},{self.reference[1]}",
+            "CLS",
+        ]
+        header = (EOL.join(header_lines) + EOL).encode("utf-8")
+        body = b"".join(element + EOL.encode("ascii") for element in self._elements)
+        footer = f"PRINT {copies}{EOL}".encode("utf-8")
+        return header + body + footer
+
+    def build_text(self, copies: int = 1) -> str:
+        """返回可读 TSPL；位图数据以长度占位符表示。"""
         lines = [
             f"SIZE {_fmt_mm(self.width_mm)} mm,{_fmt_mm(self.height_mm)} mm",
             f"GAP {_fmt_mm(self.gap_mm)} mm,{_fmt_mm(self.gap_offset_mm)} mm",
             f"DIRECTION {self.direction}",
             f"REFERENCE {self.reference[0]},{self.reference[1]}",
             "CLS",
-            *self._elements,
+            *self._display_elements,
             f"PRINT {copies}",
         ]
-        text = EOL.join(lines) + EOL
-        return text.encode("utf-8")
-
-    def build_text(self, copies: int = 1) -> str:
-        """便于预览：返回可读的 TSPL 文本（等价于 build() 解码）。"""
-        return self.build(copies).decode("utf-8")
+        return EOL.join(lines) + EOL

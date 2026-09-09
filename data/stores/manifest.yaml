@@ -5,5 +5,5 @@ default: BT_store
 stores:
   BT_store:
     name: BT_store
-  example_store:
-    name: example_store
+  MooMee:
+    name: MooMee

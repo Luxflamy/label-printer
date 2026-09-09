@@ -28,6 +28,9 @@ import type {
   FitMode,
   ShippingLabelPreviewData,
   ShippingLabelPrintData,
+  SkuHistoryData,
+  SkuLabelPrintData,
+  SkuLabelPrintPayload,
   StockSpec,
   TemplateDetail,
   TemplateSummary,
@@ -204,6 +207,24 @@ export const apiClient = {
       body: JSON.stringify(payload),
     }),
 
+  printSkuLabel: (payload: SkuLabelPrintPayload) =>
+    request<SkuLabelPrintData>("/sku-labels/print", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }),
+
+  listSkuHistory: (keyword = "", limit = 20) => {
+    const params = new URLSearchParams({ limit: String(limit) });
+    if (keyword) params.set("q", keyword);
+    return request<SkuHistoryData>(`/sku-labels/history?${params.toString()}`);
+  },
+
+  deleteSkuHistory: (sku: string) =>
+    request<{ sku: string; deleted: boolean }>(
+      `/sku-labels/history/${encodeURIComponent(sku)}`,
+      { method: "DELETE" }
+    ),
+
   listCalibrationStocks: () =>
     request<{ stocks: StockSpec[] }>("/calibration/stocks"),
 
@@ -245,6 +266,7 @@ export const apiClient = {
       media_type?: MediaType;
       strategy?: FeedStrategy;
       print_test_after?: boolean;
+      formfeed_after?: boolean;
     }
   ) =>
     request<AutoFeedData>("/calibration/auto-feed", {
@@ -255,6 +277,7 @@ export const apiClient = {
         media_type: options?.media_type ?? "gap",
         strategy: options?.strategy ?? "gapdetect",
         print_test_after: options?.print_test_after ?? false,
+        formfeed_after: options?.formfeed_after ?? false,
       }),
     }),
 
@@ -273,7 +296,7 @@ export const apiClient = {
     form.append("page", String(options.page ?? 0));
     form.append("fit_mode", options.fit_mode ?? "contain");
     form.append("rotation", String(options.rotation ?? 0));
-    form.append("scale", String(options.scale ?? 1.08));
+    form.append("scale", String(options.scale ?? 0.94));
     if (options.printer) form.append("printer", options.printer);
     return uploadRequest<ShippingLabelPreviewData>("/shipping-label/preview", form);
   },
@@ -296,7 +319,7 @@ export const apiClient = {
     form.append("copies", String(options.copies ?? 1));
     form.append("fit_mode", options.fit_mode ?? "contain");
     form.append("rotation", String(options.rotation ?? 0));
-    form.append("scale", String(options.scale ?? 1.08));
+    form.append("scale", String(options.scale ?? 0.94));
     form.append("print_all_pages", String(options.print_all_pages ?? false));
     if (options.printer) form.append("printer", options.printer);
     return uploadRequest<ShippingLabelPrintData>("/shipping-label/print", form);

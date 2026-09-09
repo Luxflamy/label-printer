@@ -5,7 +5,7 @@ import { ApiError, apiClient } from "@/lib/api-client";
 import type { FitMode, ShippingLabelPreviewData } from "@/types/api";
 
 /** 与后端 DEFAULT_PRINT_SCALE 一致 */
-export const DEFAULT_PRINT_SCALE = 1.08;
+export const DEFAULT_PRINT_SCALE = 0.94;
 
 interface PdfShippingState {
   file: File | null;
@@ -61,6 +61,9 @@ export function usePdfShipping(printer: string | null) {
           preview,
           previewing: false,
           page: preview.page,
+          // 仅首次解析该 PDF 时自动勾选多页；后续预览刷新保留用户选择
+          printAllPages:
+            prev.preview == null ? preview.page_count > 1 : prev.printAllPages,
         }));
       } catch (err) {
         setState((prev) => ({

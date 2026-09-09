@@ -13,6 +13,7 @@ import { usePrintQueue } from "@/hooks/use-print-queue";
 import { useProductStores } from "@/hooks/use-product-stores";
 import { useProducts } from "@/hooks/use-products";
 import { useTemplates } from "@/hooks/use-templates";
+import { BATCH_PREFERRED_PRINTER } from "@/lib/config";
 
 export default function BatchPage() {
   /* ---- 模板 ---- */
@@ -53,7 +54,7 @@ export default function BatchPage() {
     lastUpdated,
     selectPrinter,
     refresh: refreshPrinters,
-  } = usePrinters();
+  } = usePrinters({ preferredQueue: BATCH_PREFERRED_PRINTER });
 
   /* ---- 批量打印 ---- */
   const { loading: printing, result: printResult, error: printError, print, reset } = useBatchPrint();

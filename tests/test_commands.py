@@ -1,5 +1,6 @@
 """TSPL 命令构建单元测试。"""
 
+from label_printer.tspl.bitmap import BitmapPayload
 from label_printer.tspl.commands import LabelJob
 from label_printer.utils.units import mm_to_dots
 
@@ -46,6 +47,16 @@ def test_label_job_box() -> None:
     job = LabelJob(width_mm=40, height_mm=30)
     job.box(1, 1, 39, 29, thickness=2)
     assert "BOX 8,8,312,232,2" in job.build_text()
+
+
+def test_label_job_bitmap_keeps_binary_data() -> None:
+    job = LabelJob(width_mm=40, height_mm=30)
+    payload = BitmapPayload(width_bytes=1, height_dots=2, data=b"\x00\xff")
+    job.bitmap(1, 2, payload)
+
+    data = job.build()
+    assert b"BITMAP 8,16,1,2,0,\x00\xff\r\n" in data
+    assert "BITMAP 8,16,1,2,0,<2 binary bytes>" in job.build_text()
 
 
 def test_label_job_multiple_copies() -> None:

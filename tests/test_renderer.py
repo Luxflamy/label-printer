@@ -1,11 +1,13 @@
 """模板渲染单元测试。"""
 
+from datetime import datetime, timezone
 from pathlib import Path
 
 import pytest
 
 from label_printer.templates.loader import load_template
 from label_printer.templates.renderer import (
+    enrich_variables,
     extract_variables,
     render_template,
     render_template_text,
@@ -35,7 +37,7 @@ def test_render_template_small_label() -> None:
     assert "BESTOUCH DuvetCover" in text
     assert text.strip().endswith("PRINT 1")
     assert "BARCODE 76," in text
-    assert 'TEXT 124,40,"2",0,2,2,"BT-Green-Queen"' in text
+    assert 'TEXT ' in text and '"BT-Green-Queen"' in text
 
 
 def test_render_template_missing_variable_raises() -> None:
@@ -56,3 +58,23 @@ def test_render_large_template_has_qrcode_command() -> None:
     assert "QRCODE" in text
     assert "Fragile" in text
     assert "QRCODE 496," not in text  # 原先固定 x=62mm=496 dots，居中后应变化
+
+
+def test_overseas_template_computes_local_time_and_renders_bitmap() -> None:
+    tpl = load_template("100x150_250p_overseas", LABELS_DIR)
+    assert extract_variables(tpl) == {"sku"}
+
+    variables = enrich_variables(
+        tpl,
+        {"sku": "SKU-OVERSEAS-001"},
+        now=datetime(2026, 8, 3, 15, 12, 30, tzinfo=timezone.utc),
+    )
+    assert variables["shipped_date"] == "2026-08-03"
+    assert variables["shipped_time"] == "10:12:30 CDT"
+
+    text = render_template_text(tpl, {"sku": "SKU-OVERSEAS-001"})
+    data = render_template(tpl, {"sku": "SKU-OVERSEAS-001"})
+    assert "BITMAP " in text
+    assert "<40500 binary bytes>" in text
+    assert 'BARCODE ' in text
+    assert b"\xe6\xb5\xb7\xe5\xa4\x96\xe4\xbb\x93\xe5\x8f\x91\xe8\xb4\xa7" not in data

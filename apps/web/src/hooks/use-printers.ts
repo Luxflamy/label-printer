@@ -21,8 +21,14 @@ interface PrintersState {
   lastUpdated: Date | null;
 }
 
+interface UsePrintersOptions {
+  /** 页面进入后若该队列在线，则自动选中一次（不反复覆盖用户手动切换） */
+  preferredQueue?: string;
+}
+
 /** 页面可见时 0.5s 轮询，隐藏时 60s；选中写回 printer.yaml。 */
-export function usePrinters() {
+export function usePrinters(options: UsePrintersOptions = {}) {
+  const { preferredQueue } = options;
   const [state, setState] = useState<PrintersState>({
     printers: [],
     selectedQueue: null,
@@ -32,6 +38,7 @@ export function usePrinters() {
     lastUpdated: null,
   });
   const mounted = useRef(true);
+  const preferredApplied = useRef(false);
 
   const refresh = useCallback(async (silent = false) => {
     if (!silent) {
@@ -60,31 +67,51 @@ export function usePrinters() {
     }
   }, []);
 
-  const selectPrinter = useCallback(
-    async (queue: string) => {
-      setState((prev) => ({ ...prev, selecting: true, error: null }));
-      try {
-        const data = await apiClient.selectPrinter(queue);
-        if (!mounted.current) return;
-        setState({
-          printers: data.printers,
-          selectedQueue: data.selected_queue,
-          loading: false,
-          selecting: false,
-          error: null,
-          lastUpdated: new Date(),
-        });
-      } catch (err) {
-        if (!mounted.current) return;
-        setState((prev) => ({
-          ...prev,
-          selecting: false,
-          error: err instanceof Error ? err.message : "选择打印机失败",
-        }));
-      }
-    },
-    []
-  );
+  const selectPrinter = useCallback(async (queue: string) => {
+    setState((prev) => ({ ...prev, selecting: true, error: null }));
+    try {
+      const data = await apiClient.selectPrinter(queue);
+      if (!mounted.current) return;
+      setState({
+        printers: data.printers,
+        selectedQueue: data.selected_queue,
+        loading: false,
+        selecting: false,
+        error: null,
+        lastUpdated: new Date(),
+      });
+    } catch (err) {
+      if (!mounted.current) return;
+      setState((prev) => ({
+        ...prev,
+        selecting: false,
+        error: err instanceof Error ? err.message : "选择打印机失败",
+      }));
+    }
+  }, []);
+
+  useEffect(() => {
+    preferredApplied.current = false;
+  }, [preferredQueue]);
+
+  useEffect(() => {
+    if (!preferredQueue || preferredApplied.current) return;
+    if (state.loading || state.selecting) return;
+    if (state.printers.length === 0) return;
+    const exists = state.printers.some((p) => p.name === preferredQueue);
+    if (!exists) return;
+    preferredApplied.current = true;
+    if (state.selectedQueue !== preferredQueue) {
+      void selectPrinter(preferredQueue);
+    }
+  }, [
+    preferredQueue,
+    state.loading,
+    state.selecting,
+    state.printers,
+    state.selectedQueue,
+    selectPrinter,
+  ]);
 
   useEffect(() => {
     mounted.current = true;

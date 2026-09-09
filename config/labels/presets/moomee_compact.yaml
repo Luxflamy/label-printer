@@ -1,0 +1,52 @@
+# MooMee 小标签排版预设 — 50×30mm
+# 顺序：大 SKU → 短标题（自动换行）→ 加宽条码 → 条码数字
+meta:
+  preset: moomee_compact
+  description: "大SKU + 短标题换行 + 加宽条码 + 条码数字（MooMee）"
+
+elements:
+
+  - id: sku
+    type: text
+    align: center
+    x_mm: 10
+    y_mm: 2
+    font: "1"
+    x_mul: 2
+    y_mul: 2
+    content: "{{ sku }}"
+
+  - id: short_title
+    type: bitmap_text
+    align: center
+    x_mm: 2
+    y_mm: 5.5
+    width_mm: 67
+    height_mm: 8.5
+    font_size_mm: 2.4
+    wrap: true
+    max_lines: 2
+    line_spacing: 1.1
+    content: "{{ short_title }}"
+
+  - id: fnsku_barcode
+    type: barcode
+    align: center
+    x_mm: 3
+    y_mm: 14.5
+    symbology: "128"
+    height_mm: 15.5
+    human_readable: false
+    narrow: 3.5  # 比默认小标签更宽，条码整体拉长
+    wide: 8
+    content: "{{ fnsku }}"
+
+  - id: fnsku_code
+    type: text
+    align: center
+    x_mm: 13.5
+    y_mm: 33.5
+    font: "3"
+    x_mul: 1
+    y_mul: 1
+    content: "{{ fnsku }}"

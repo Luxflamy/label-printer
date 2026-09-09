@@ -14,18 +14,18 @@ def test_default_store_prefers_bt_store_when_present() -> None:
     if (_STORES_DIR / "BT_store.json").exists():
         assert default_id == "BT_store"
     else:
-        assert default_id == "example_store"
+        assert default_id == "MooMee"
 
 
 def test_bt_store_listed_first_when_present() -> None:
     stores, default_id = list_stores()
     store_ids = [s.id for s in stores]
-    assert "example_store" in store_ids
+    assert "MooMee" in store_ids
     if (_STORES_DIR / "BT_store.json").exists():
         assert store_ids[0] == "BT_store"
         assert default_id == "BT_store"
     else:
-        assert default_id == "example_store"
+        assert default_id == "MooMee"
 
 
 def test_load_default_store_has_products() -> None:

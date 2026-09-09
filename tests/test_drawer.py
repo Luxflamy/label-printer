@@ -9,6 +9,7 @@ from typing import Any
 import pytest
 
 from label_printer.preview.drawer import SCALE, _px, draw_label_png
+from label_printer.templates.loader import load_template
 from label_printer.tspl.constants import DOTS_PER_MM
 
 # ---------------------------------------------------------------------------
@@ -16,6 +17,7 @@ from label_printer.tspl.constants import DOTS_PER_MM
 # ---------------------------------------------------------------------------
 
 TEMPLATE_DIR = Path(__file__).parent.parent / "config" / "labels" / "templates"
+LABELS_DIR = TEMPLATE_DIR.parent
 
 
 def _png_dimensions(data: bytes) -> tuple[int, int]:
@@ -96,6 +98,14 @@ def test_draw_with_text_variable():
     ])
     png = draw_label_png(tpl, {"sku": "SKU-001"})
     assert png[:8] == b"\x89PNG\r\n\x1a\n"
+
+
+def test_draw_overseas_template_with_chinese_title():
+    tpl = load_template("100x150_250p_overseas", LABELS_DIR)
+    png = draw_label_png(tpl, {"sku": "SKU-OVERSEAS-001"})
+
+    assert _png_dimensions(png) == (_px(100), _px(150))
+    assert len(png) > 5000
 
 
 # ---------------------------------------------------------------------------

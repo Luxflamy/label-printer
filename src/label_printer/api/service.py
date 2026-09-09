@@ -25,6 +25,7 @@ from label_printer.calibration import (
 from label_printer.config import CONFIG_DIR, LABELS_DIR, load_printer_config, resolve_dots_per_mm, save_printer_queue
 from label_printer.connection import build_connection
 from label_printer.connection.cups_raw import list_cups_printers
+from label_printer.history import SkuRecord, delete_sku, query_skus, record_sku
 from label_printer.templates.loader import list_templates as _list_template_names
 from label_printer.templates.loader import load_template
 from label_printer.pdf.label_job import build_pdf_label_tspl
@@ -69,6 +70,14 @@ class PrinterNotFoundError(ServiceError):
     code = "PRINTER_NOT_FOUND"
 
 
+class EmptySkuError(ServiceError):
+    code = "EMPTY_SKU"
+
+
+# 自定义小标签默认模板：复用 50×30mm 800P 尺寸基座，仅渲染 SKU
+SKU_LABEL_TEMPLATE = "xiaobiaoqian_sku"
+
+
 @dataclass
 class TemplateSummary:
     """模板列表页所需的摘要信息（不含完整 elements）。"""
@@ -110,6 +119,17 @@ class PrintResult:
     template: str
     copies: int
     queue: str | None
+
+
+@dataclass
+class SkuLabelPrintResult:
+    sku: str
+    template: str
+    copies: int
+    queue: str | None
+    print_count: int
+    first_printed_at: str
+    last_printed_at: str
 
 
 @dataclass
@@ -318,12 +338,20 @@ class LabelPrinterService:
         media_type: MediaType = "gap",
         strategy: FeedStrategy = "gapdetect",
         print_test_after: bool = False,
+        formfeed_after: bool = False,
     ) -> AutoFeedResult:
-        """发送 GAPDETECT/AUTODETECT + HOME，让打印机学习间隙并定位到标签起始。"""
+        """发送传感器校准命令，并按需额外定位到下一张标签起始。"""
         label = self._label_for_stock(stock_code)
-        data = build_auto_feed_calibration_bytes(label, media_type, strategy)
-        tspl = data.decode("utf-8")
         config = self._resolve_config(printer)
+        dots_per_mm = resolve_dots_per_mm(config)
+        data = build_auto_feed_calibration_bytes(
+            label,
+            media_type,
+            strategy,
+            dots_per_mm=dots_per_mm,
+            formfeed_after=formfeed_after,
+        )
+        tspl = data.decode("utf-8")
         self._send(data, config)
 
         test_printed = False
@@ -332,12 +360,16 @@ class LabelPrinterService:
             self.print_calibration_test(printer, stock_code, profile)
             test_printed = True
 
+        alignment = "，并定位到下一张标签" if formfeed_after else "（省纸模式，不额外走到下一张）"
         if media_type == "blackmark":
-            msg = "已发送黑标传感器校准（BLINEDETECT + FORMFEED），走纸应在数秒内停止。"
+            msg = f"已发送黑标传感器校准{alignment}，走纸应在数秒内停止。"
         elif strategy == "autodetect":
-            msg = "已发送自动介质检测（AUTODETECT + FORMFEED），走纸应在数秒内停止。"
+            msg = f"已发送自动介质检测{alignment}，走纸应在数秒内停止。"
         else:
-            msg = "已发送间隙传感器校准（GAPDETECT + FORMFEED），走纸应在数秒内停止。若红灯闪，请检查间隙纸规格或试 AUTODETECT。"
+            msg = (
+                f"已按纸张尺寸发送间隙传感器校准{alignment}，走纸应在数秒内停止。"
+                "若红灯闪，请检查间隙纸规格或试 AUTODETECT。"
+            )
 
         return AutoFeedResult(
             printer=printer,
@@ -659,6 +691,41 @@ class LabelPrinterService:
         data = tspl.encode("utf-8") if isinstance(tspl, str) else tspl
         cfg = config or self.get_printer_config()
         self._send(data, cfg)
+
+    # ---- 自定义 SKU 小标签 -------------------------------------------------
+
+    def print_sku_label(
+        self,
+        sku: str,
+        template_name: str = SKU_LABEL_TEMPLATE,
+        copies: int = 1,
+        printer: str | None = None,
+    ) -> SkuLabelPrintResult:
+        """打印一张手工输入的 SKU 小标签，成功后才登记到打印历史。"""
+        normalized = sku.strip()
+        if not normalized:
+            raise EmptySkuError("SKU 不能为空")
+
+        printed = self.print_one(
+            template_name, {"sku": normalized}, copies=copies, printer=printer
+        )
+        record = record_sku(normalized, template=template_name)
+
+        return SkuLabelPrintResult(
+            sku=record.sku,
+            template=printed.template,
+            copies=printed.copies,
+            queue=printed.queue,
+            print_count=record.print_count,
+            first_printed_at=record.first_printed_at,
+            last_printed_at=record.last_printed_at,
+        )
+
+    def list_sku_history(self, keyword: str = "", limit: int = 20) -> list[SkuRecord]:
+        return query_skus(keyword, limit=limit)
+
+    def delete_sku_history(self, sku: str) -> bool:
+        return delete_sku(sku)
 
     # ---- 内部 -----------------------------------------------------------
 

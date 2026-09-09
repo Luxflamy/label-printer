@@ -106,6 +106,7 @@ def auto_feed_calibrate(
         media_type=req.media_type,
         strategy=req.strategy,
         print_test_after=req.print_test_after,
+        formfeed_after=req.formfeed_after,
     )
     return Envelope(ok=True, data=AutoFeedData.model_validate(result))
 

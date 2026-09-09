@@ -209,7 +209,8 @@ export function useCalibration(printer: string | null, stockCode: string | null)
     async (
       mediaType: MediaType = "gap",
       strategy: FeedStrategy = "gapdetect",
-      printTestAfter = false
+      printTestAfter = false,
+      formfeedAfter = false
     ) => {
       if (!printer || !stockCode) return;
       setState((prev) => ({
@@ -224,6 +225,7 @@ export function useCalibration(printer: string | null, stockCode: string | null)
           media_type: mediaType,
           strategy,
           print_test_after: printTestAfter,
+          formfeed_after: formfeedAfter,
         });
         if (!mounted.current) return;
         setState((prev) => ({ ...prev, autoFeeding: false, feedResult: data }));
